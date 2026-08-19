@@ -29,7 +29,7 @@ public static class SettingsStore
             if (settings is null || settings.Keys is null)
                 throw new InvalidDataException("The settings file is empty or invalid.");
             if (settings.Version == "0.2.0") MigrateV02(json, settings);
-            settings.Version = "0.3.0";
+            settings.Version = "0.4.0";
             return settings;
         }
         catch (Exception ex)

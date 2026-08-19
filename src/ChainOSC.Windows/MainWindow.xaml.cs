@@ -1,11 +1,13 @@
 using System.IO;
+using System.ComponentModel;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using ChainOSC.Core;
-using Microsoft.Win32;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 using Microsoft.Web.WebView2.Core;
 
 namespace ChainOSC.Windows;
@@ -24,13 +26,21 @@ public partial class MainWindow : Window
     private ChainOscSettings _settings;
     private readonly string? _loadWarning;
     private readonly Dictionary<string, double> _sequenceValues = [];
+    private readonly System.Windows.Forms.NotifyIcon _trayIcon;
+    private bool _exitRequested;
+    private bool _trayNoticeShown;
 
     public MainWindow()
     {
         _settings = SettingsStore.Load(out _loadWarning);
         InitializeComponent();
+        _trayIcon = CreateTrayIcon();
         Loaded += OnLoaded;
+        StateChanged += OnStateChanged;
+        Closing += OnClosing;
         Closed += OnClosed;
+        System.Windows.Application.Current.SessionEnding += (_, _) =>
+            _exitRequested = true;
         _hotkeys.HotkeyChanged += OnHotkeyChanged;
     }
 
@@ -51,9 +61,10 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"ChainOSC could not start.\n\n{ex.Message}",
-                            "ChainOSC for Windows", MessageBoxButton.OK,
-                            MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(
+                $"ChainOSC could not start.\n\n{ex.Message}",
+                "ChainOSC for Windows", System.Windows.MessageBoxButton.OK,
+                System.Windows.MessageBoxImage.Error);
         }
     }
 
@@ -85,7 +96,7 @@ public partial class MainWindow : Window
             if (request.Action == "save" && request.Settings is not null)
             {
                 Validate(request.Settings);
-                request.Settings.Version = "0.3.0";
+                request.Settings.Version = "0.4.0";
                 ConfigureHotkeys(request.Settings);
                 SettingsStore.Save(request.Settings);
                 _settings = request.Settings;
@@ -139,7 +150,7 @@ public partial class MainWindow : Window
                 // A device preset contains only Key behavior. Hotkey conflicts and
                 // other application-wide settings are checked by Save All Settings.
                 ValidateKey(key);
-                request.Settings.Version = "0.3.0";
+                request.Settings.Version = "0.4.0";
                 _settings = request.Settings;
                 ResetSequences(_settings);
                 PostSettings();
@@ -337,8 +348,69 @@ public partial class MainWindow : Window
     private void PostOperationResult(string? keyId, string message, bool success) =>
         PostMessage(new { action = "operationResult", keyId, message, success });
 
+    private System.Windows.Forms.NotifyIcon CreateTrayIcon()
+    {
+        var menu = new System.Windows.Forms.ContextMenuStrip();
+        menu.Items.Add("Open Settings", null, (_, _) =>
+            Dispatcher.Invoke(ShowFromTray));
+        menu.Items.Add(new System.Windows.Forms.ToolStripSeparator());
+        menu.Items.Add("Exit", null, (_, _) =>
+            Dispatcher.Invoke(ExitFromTray));
+
+        var icon = new System.Windows.Forms.NotifyIcon
+        {
+            Text = "ChainOSC for Windows",
+            Icon = System.Drawing.SystemIcons.Application,
+            ContextMenuStrip = menu,
+            Visible = true,
+        };
+        icon.DoubleClick += (_, _) => Dispatcher.Invoke(ShowFromTray);
+        return icon;
+    }
+
+    private void OnStateChanged(object? sender, EventArgs e)
+    {
+        if (WindowState == WindowState.Minimized) HideToTray();
+    }
+
+    private void OnClosing(object? sender, CancelEventArgs e)
+    {
+        if (_exitRequested) return;
+        e.Cancel = true;
+        HideToTray();
+    }
+
+    private void HideToTray()
+    {
+        ShowInTaskbar = false;
+        Hide();
+        if (_trayNoticeShown) return;
+        _trayNoticeShown = true;
+        _trayIcon.BalloonTipTitle = "ChainOSC is still running";
+        _trayIcon.BalloonTipText =
+            "Global hotkeys remain active. Use the tray icon to open settings or exit.";
+        _trayIcon.ShowBalloonTip(4000);
+    }
+
+    private void ShowFromTray()
+    {
+        ShowInTaskbar = true;
+        Show();
+        WindowState = WindowState.Normal;
+        Activate();
+    }
+
+    private void ExitFromTray()
+    {
+        _exitRequested = true;
+        Close();
+        System.Windows.Application.Current.Shutdown();
+    }
+
     private void OnClosed(object? sender, EventArgs e)
     {
+        _trayIcon.Visible = false;
+        _trayIcon.Dispose();
         _hotkeys.Dispose();
         _oscSender.Dispose();
         Browser.Dispose();
