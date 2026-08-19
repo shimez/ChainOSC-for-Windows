@@ -1,8 +1,8 @@
 # ChainOSC for Windows — Tauri prototype
 
-## v0.3.0
+## v0.4.0
 
-This version adds ChainOSC-compatible Key behavior and device presets:
+This version makes ChainOSC usable as a resident Windows application:
 
 - add and delete any number of Keys;
 - a name and independent global hotkey for every Key;
@@ -17,6 +17,12 @@ This version adds ChainOSC-compatible Key behavior and device presets:
 - Press / Release and Sequence modes;
 - import and export of `ChainOSC-device-preset` Key JSON files;
 - import support for legacy `M5ChainOSC-device-preset` files.
+- minimizing or closing the window hides it in the system tray;
+- global hotkeys continue working while the window is hidden;
+- double-clicking the tray icon restores the window;
+- the tray menu provides Show ChainOSC and Exit commands;
+- Exit fully terminates the application and releases its hotkeys;
+- release builds use a ChainOSC-specific executable name.
 - test buttons and an activity log.
 
 The `.NET 10` implementation in the repository root remains the reference

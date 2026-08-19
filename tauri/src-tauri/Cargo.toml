@@ -1,6 +1,6 @@
 [package]
-name = "tauri"
-version = "0.3.0"
+name = "chainosc-for-windows"
+version = "0.4.0"
 description = "Lightweight OSC sender controlled by global hotkeys"
 authors = ["shimez"]
 edition = "2021"
@@ -11,14 +11,14 @@ edition = "2021"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "tauri_lib"
+name = "chainosc_for_windows_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
+tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-opener = "2"
 tauri-plugin-global-shortcut = "2"
 serde = { version = "1", features = ["derive"] }
