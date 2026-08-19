@@ -18,4 +18,8 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ChainOSC.Core\ChainOSC.Core.csproj" />
+  </ItemGroup>
+
 </Project>
