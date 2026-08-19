@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using ChainOSC.Core;
@@ -9,32 +10,40 @@ namespace ChainOSC.Windows;
 
 public partial class MainWindow : Window
 {
-    private readonly GlobalHotkeyService _hotkey = new();
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+    };
+
+    private readonly GlobalHotkeyService _hotkeys = new();
     private readonly OscUdpSender _oscSender = new();
-    private AppConfiguration _configuration = AppConfiguration.Default;
+    private ChainOscSettings _settings;
+    private readonly string? _loadWarning;
 
     public MainWindow()
     {
+        _settings = SettingsStore.Load(out _loadWarning);
         InitializeComponent();
         Loaded += OnLoaded;
         Closed += OnClosed;
-        _hotkey.HotkeyChanged += OnHotkeyChanged;
+        _hotkeys.HotkeyChanged += OnHotkeyChanged;
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)
     {
         try
         {
+            ConfigureHotkeys(_settings);
             await Browser.EnsureCoreWebView2Async();
             Browser.CoreWebView2.Settings.AreDevToolsEnabled = true;
             Browser.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
+            Browser.CoreWebView2.NavigationCompleted += OnNavigationCompleted;
             Browser.CoreWebView2.SetVirtualHostNameToFolderMapping(
                 "chainosc.local", Path.Combine(AppContext.BaseDirectory, "WebUI"),
                 CoreWebView2HostResourceAccessKind.DenyCors);
             Browser.Source = new Uri("https://chainosc.local/index.html");
-            _hotkey.Configure(_configuration.Hotkey, _configuration.Ctrl,
-                              _configuration.Alt, _configuration.Shift,
-                              _configuration.Win);
         }
         catch (Exception ex)
         {
@@ -44,45 +53,118 @@ public partial class MainWindow : Window
         }
     }
 
+    private void OnNavigationCompleted(object? sender,
+                                       CoreWebView2NavigationCompletedEventArgs e)
+    {
+        if (!e.IsSuccess) return;
+        PostSettings();
+        if (_loadWarning is not null) _ = LogAsync(_loadWarning, "error");
+        else _ = LogAsync($"Loaded { _settings.Keys.Count } Key setting(s) from " +
+                          SettingsStore.FilePath, "ok");
+    }
+
+    private void PostSettings()
+    {
+        var envelope = new { action = "load", settings = _settings };
+        Browser.CoreWebView2.PostWebMessageAsJson(
+            JsonSerializer.Serialize(envelope, JsonOptions));
+    }
+
     private async void OnWebMessageReceived(object? sender,
                                             CoreWebView2WebMessageReceivedEventArgs e)
     {
         try
         {
             var request = JsonSerializer.Deserialize<UiRequest>(e.WebMessageAsJson,
-                new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                                                                 JsonOptions);
             if (request is null) return;
-            if (request.Action == "apply")
+            if (request.Action == "save" && request.Settings is not null)
             {
-                var configuration = AppConfiguration.From(request);
-                Validate(configuration);
-                _hotkey.Configure(configuration.Hotkey, configuration.Ctrl,
-                                  configuration.Alt, configuration.Shift,
-                                  configuration.Win);
-                _configuration = configuration;
-                await LogAsync($"Ready: {configuration.HotkeyDisplay} → " +
-                               $"{configuration.Host}:{configuration.Port}", "ok");
+                Validate(request.Settings);
+                request.Settings.Version = "0.2.0";
+                ConfigureHotkeys(request.Settings);
+                SettingsStore.Save(request.Settings);
+                _settings = request.Settings;
+                await LogAsync($"Saved {_settings.Keys.Count} Key setting(s).", "ok");
             }
-            else if (request.Action == "testPress") await SendAsync(true);
-            else if (request.Action == "testRelease") await SendAsync(false);
+            else if (request.Action == "test" && request.KeyId is not null)
+            {
+                var testSettings = request.Settings ?? _settings;
+                Validate(testSettings);
+                await SendAsync(request.KeyId, request.Pressed, testSettings);
+            }
         }
         catch (Exception ex) { await LogAsync(ex.Message, "error"); }
     }
 
     private void OnHotkeyChanged(object? sender, HotkeyEventArgs e) =>
-        _ = Dispatcher.InvokeAsync(() => SendAsync(e.Pressed));
+        _ = Dispatcher.InvokeAsync(() => SendAsync(e.KeyId, e.Pressed));
 
-    private async Task SendAsync(bool pressed)
+    private async Task SendAsync(string keyId, bool pressed,
+                                 ChainOscSettings? sourceSettings = null)
     {
+        sourceSettings ??= _settings;
+        var key = sourceSettings.Keys.FirstOrDefault(item => item.Id == keyId);
+        if (key is null) return;
         try
         {
-            var value = pressed ? _configuration.PressValue : _configuration.ReleaseValue;
-            var message = new OscMessage(_configuration.Address, _configuration.Type, value);
-            await _oscSender.SendAsync(_configuration.Host, _configuration.Port, message);
-            await LogAsync($"{(pressed ? "PRESSED" : "RELEASED")}: " +
+            var value = pressed ? key.PressValue : key.ReleaseValue;
+            var message = new OscMessage(key.Address, key.Type, value);
+            await _oscSender.SendAsync(sourceSettings.Host, sourceSettings.Port,
+                                       message);
+            await LogAsync($"{key.Name} {(pressed ? "PRESSED" : "RELEASED")}: " +
                            $"{message.Address} {message.Type} {value}", "sent");
         }
         catch (Exception ex) { await LogAsync($"Send failed: {ex.Message}", "error"); }
+    }
+
+    private static void Validate(ChainOscSettings settings)
+    {
+        if (string.IsNullOrWhiteSpace(settings.Host))
+            throw new InvalidOperationException("OSC host is required.");
+        if (settings.Port is < 1 or > 65535)
+            throw new InvalidOperationException("UDP port must be 1–65535.");
+        if (settings.Keys.Count == 0)
+            throw new InvalidOperationException("Add at least one Key.");
+
+        var identities = new HashSet<string>(StringComparer.Ordinal);
+        var hotkeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var key in settings.Keys)
+        {
+            if (string.IsNullOrWhiteSpace(key.Id) || !identities.Add(key.Id))
+                throw new InvalidOperationException("Each Key must have a unique identity.");
+            if (string.IsNullOrWhiteSpace(key.Name))
+                throw new InvalidOperationException("Key name is required.");
+            if (!TryGetVirtualKey(key.Hotkey, out _))
+                throw new InvalidOperationException($"{key.Name}: unsupported hotkey.");
+            var signature = $"{key.Ctrl}:{key.Alt}:{key.Shift}:{key.Win}:{key.Hotkey}";
+            if (!hotkeys.Add(signature))
+                throw new InvalidOperationException($"Duplicate hotkey: {key.HotkeyDisplay}");
+            _ = OscPacketBuilder.Build(new OscMessage(key.Address, key.Type, key.PressValue));
+            _ = OscPacketBuilder.Build(new OscMessage(key.Address, key.Type, key.ReleaseValue));
+        }
+    }
+
+    private void ConfigureHotkeys(ChainOscSettings settings)
+    {
+        Validate(settings);
+        _hotkeys.Configure(settings.Keys.Select(key => new HotkeyBinding(
+            key.Id, GetVirtualKey(key.Hotkey), key.Ctrl, key.Alt, key.Shift, key.Win)));
+    }
+
+    private static int GetVirtualKey(string text)
+    {
+        if (!TryGetVirtualKey(text, out var virtualKey))
+            throw new InvalidOperationException($"Unsupported hotkey: {text}");
+        return virtualKey;
+    }
+
+    private static bool TryGetVirtualKey(string text, out int virtualKey)
+    {
+        virtualKey = 0;
+        if (!Enum.TryParse<Key>(text, true, out var key)) return false;
+        virtualKey = KeyInterop.VirtualKeyFromKey(key);
+        return virtualKey != 0;
     }
 
     private async Task LogAsync(string message, string level)
@@ -93,55 +175,18 @@ public partial class MainWindow : Window
             $"{JsonSerializer.Serialize(level)})");
     }
 
-    private static void Validate(AppConfiguration value)
-    {
-        if (string.IsNullOrWhiteSpace(value.Host))
-            throw new InvalidOperationException("OSC host is required.");
-        if (value.Port is < 1 or > 65535)
-            throw new InvalidOperationException("UDP port must be 1–65535.");
-        if (!value.Address.StartsWith('/'))
-            throw new InvalidOperationException("OSC Address must start with '/'.");
-        _ = OscPacketBuilder.Build(new OscMessage(value.Address, value.Type, value.PressValue));
-        _ = OscPacketBuilder.Build(new OscMessage(value.Address, value.Type, value.ReleaseValue));
-    }
-
     private void OnClosed(object? sender, EventArgs e)
     {
-        _hotkey.Dispose();
+        _hotkeys.Dispose();
         _oscSender.Dispose();
         Browser.Dispose();
     }
 
-    private sealed record UiRequest(
-        string Action = "", string Host = "127.0.0.1", int Port = 9000,
-        string Hotkey = "F8", bool Ctrl = false, bool Alt = false,
-        bool Shift = false, bool Win = false,
-        string Address = "/avatar/parameters/ChainOSCKey", string Type = "int",
-        string PressValue = "1", string ReleaseValue = "0");
-
-    private sealed record AppConfiguration(
-        string Host, int Port, Key Hotkey, bool Ctrl, bool Alt, bool Shift,
-        bool Win, string Address, OscValueType Type, string PressValue,
-        string ReleaseValue)
+    private sealed class UiRequest
     {
-        public static AppConfiguration Default => new(
-            "127.0.0.1", 9000, Key.F8, false, false, false, false,
-            "/avatar/parameters/ChainOSCKey", OscValueType.Int, "1", "0");
-
-        public string HotkeyDisplay =>
-            $"{(Ctrl ? "Ctrl+" : "")}{(Alt ? "Alt+" : "")}" +
-            $"{(Shift ? "Shift+" : "")}{(Win ? "Win+" : "")}{Hotkey}";
-
-        public static AppConfiguration From(UiRequest request)
-        {
-            if (!Enum.TryParse<Key>(request.Hotkey, true, out var hotkey))
-                throw new InvalidOperationException("Unsupported hotkey.");
-            if (!Enum.TryParse<OscValueType>(request.Type, true, out var type))
-                throw new InvalidOperationException("Unsupported OSC value type.");
-            return new(request.Host.Trim(), request.Port, hotkey, request.Ctrl,
-                       request.Alt, request.Shift, request.Win,
-                       request.Address.Trim(), type, request.PressValue,
-                       request.ReleaseValue);
-        }
+        public string Action { get; set; } = "";
+        public ChainOscSettings? Settings { get; set; }
+        public string? KeyId { get; set; }
+        public bool Pressed { get; set; }
     }
 }

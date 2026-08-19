@@ -2,20 +2,23 @@
 
 ChainOSC for Windows sends OSC messages from configurable global hotkeys.
 
-## v0.1.0
+## v0.2.0
 
-This first milestone verifies the complete path from a Windows global hotkey
-to an OSC UDP message.
+This milestone adds multiple independently configured Keys and persistent
+settings to the global-hotkey OSC foundation established in v0.1.0.
 
+- Add and delete any number of Key configurations
 - Configurable key (`F1`–`F12` or `A`–`Z`) and modifiers
 - Separate Press and Release values
 - OSC `Int`, `Float`, and `String` values
 - Configurable destination host, UDP port, and OSC Address
 - Test buttons and an activity log
 - The hotkey is not blocked from other applications
+- Duplicate hotkey validation
+- Automatic restoration from `%LOCALAPPDATA%\ChainOSC\settings.json`
 
-Settings are not persisted in v0.1.0. The preset-compatible multi-Key UI will
-be expanded in later milestones.
+Multiple OSC messages, Sequence mode, and ChainOSC device-preset compatibility
+will be expanded in later milestones.
 
 ## Run
 
