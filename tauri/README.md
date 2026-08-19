@@ -1,8 +1,8 @@
 # ChainOSC for Windows — Tauri prototype
 
-## v0.5.0
+## v0.6.0
 
-This version completes the everyday resident-app workflow:
+This version improves backup, migration, and distribution readiness:
 
 - add and delete any number of Keys;
 - a name and independent global hotkey for every Key;
@@ -26,6 +26,10 @@ This version completes the everyday resident-app workflow:
 - optional startup with Windows, beginning hidden in the system tray;
 - single-instance enforcement;
 - launching ChainOSC again restores the existing window instead of starting a duplicate.
+- complete versioned JSON settings backup and restore;
+- an unsaved-changes indicator;
+- product, version, and runtime information in the UI;
+- a custom ChainOSC application icon for executables, installers, windows, and the tray.
 - test buttons and an activity log.
 
 The `.NET 10` implementation in the repository root remains the reference

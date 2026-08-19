@@ -10,7 +10,12 @@
   <body>
     <main>
       <h1>ChainOSC for Windows</h1>
-      <p class="version">Tauri prototype v0.5.0</p>
+      <p class="version">Tauri prototype v0.6.0</p>
+
+      <section class="card system-card">
+        <h2>System</h2>
+        <div class="system-grid"><div><strong>Product</strong><span>ChainOSC for Windows</span></div><div><strong>Version</strong><span>0.6.0</span></div><div><strong>Runtime</strong><span>Tauri / WebView2</span></div></div>
+      </section>
 
       <section class="card">
         <h2>OSC Target</h2>
@@ -25,10 +30,16 @@
         <label class="switch-row"><input id="start-with-windows" type="checkbox" /> <span><strong>Start with Windows</strong><small>Start hidden in the system tray when you sign in.</small></span></label>
       </section>
 
+      <section class="card">
+        <h2>Settings Backup and Restore</h2>
+        <p class="note">Export or restore OSC target, application, Key, hotkey, and message settings as versioned JSON.</p>
+        <div class="backup-actions"><button id="export-settings" class="secondary" type="button">Export Settings (JSON)</button><button id="import-settings" class="secondary" type="button">Import Settings (JSON)</button><input id="settings-file" type="file" accept=".json,application/json" hidden /></div>
+      </section>
+
       <div id="keys"></div>
       <button id="add-key" class="add-key" type="button">+ Add Key</button>
 
-      <div class="save-bar"><button id="save" class="primary" type="button">Save Settings</button></div>
+      <div class="save-bar"><span id="unsaved" class="unsaved" hidden>Unsaved changes</span><button id="save" class="primary" type="button">Save Settings</button></div>
 
       <section class="card">
         <h2>Activity</h2>

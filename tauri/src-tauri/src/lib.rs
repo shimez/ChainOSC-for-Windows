@@ -160,6 +160,11 @@ fn send_osc(
         .map_err(|error| format!("OSC message could not be sent: {error}"))
 }
 
+#[tauri::command]
+fn write_text_file(path: String, content: String) -> Result<(), String> {
+    std::fs::write(path, content).map_err(|error| format!("The file could not be written: {error}"))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let Some(_instance_guard) = single_instance_or_activate() else {
@@ -167,6 +172,7 @@ pub fn run() {
     };
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
         .setup(|app| {
             let show = MenuItem::with_id(app, "show", "Show ChainOSC", true, None::<&str>)?;
@@ -207,7 +213,7 @@ pub fn run() {
             }
             _ => {}
         })
-        .invoke_handler(tauri::generate_handler![send_osc, get_autostart, set_autostart])
+        .invoke_handler(tauri::generate_handler![send_osc, get_autostart, set_autostart, write_text_file])
         .run(tauri::generate_context!())
         .expect("error while running ChainOSC for Windows");
 }

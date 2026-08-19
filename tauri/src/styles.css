@@ -11,6 +11,9 @@ main { max-width: 960px; margin: 0 auto; }
 h1 { margin: 0 0 4px; font-size: 28px; }
 h2 { margin: 0 0 16px; }
 .version { margin: 0 0 22px; color: #667085; }
+.system-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.system-grid div { display: grid; gap: 6px; padding: 12px; border-radius: 8px; background: #f7f8fa; }
+.system-grid span { color: #475467; }
 .card {
   margin-bottom: 16px;
   padding: 20px;
@@ -63,6 +66,10 @@ button { cursor: pointer; font-weight: 650; }
   margin: 18px 0; padding: 12px; border-radius: 12px;
   background: #fff; box-shadow: 0 3px 18px #10182830;
 }
+.save-bar { display: flex; align-items: center; gap: 12px; }
+.save-bar .primary { flex: 1; }
+.unsaved { flex: 0 0 auto; padding: 8px 10px; border-radius: 7px; color: #934b00; background: #fff1d6; font-weight: 650; }
+.backup-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .status { margin-bottom: 10px; color: #667085; }
 .status.ok { color: #067647; }
 .status.error { color: #b42318; }
@@ -87,4 +94,6 @@ button { cursor: pointer; font-weight: 650; }
   .message-row > div:not(.reorder), .delete-message { grid-column: 2; }
   .sequence-grid { grid-template-columns: 1fr; }
   .sequence-address { grid-column: auto; }
+  .system-grid, .backup-actions { grid-template-columns: 1fr; }
+  .save-bar { align-items: stretch; flex-direction: column; }
 }
