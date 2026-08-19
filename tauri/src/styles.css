@@ -20,7 +20,8 @@ h2 { margin: 0 0 16px; }
 }
 .key-card { border-left: 5px solid #7446cc; }
 .key-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.key-heading .danger { width: auto; min-height: 36px; padding: 6px 12px; }
+.key-actions { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+.key-actions button { width: auto; min-height: 36px; padding: 6px 12px; }
 .wide { grid-column: 1 / -1; }
 .grid { display: grid; gap: 14px; }
 .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -40,6 +41,22 @@ button { cursor: pointer; font-weight: 650; }
 .secondary { color: #2866e8; background: #fff; border-color: #8bb0ff; }
 .danger { color: #c4323f; background: #fff5f5; border-color: #f2b8bd; }
 .add-key { margin-bottom: 4px; color: #2866e8; background: #f7faff; border: 1px dashed #8bb0ff; }
+.mode-box { margin: 18px 0 14px; padding: 14px; border-radius: 9px; background: #f7f8fa; }
+.message-summary { display: flex; justify-content: space-between; margin-bottom: 10px; padding: 12px; border-radius: 9px; color: #2454ad; background: #edf4ff; }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; margin-bottom: 12px; padding: 3px; border-radius: 9px; background: #edf0f5; }
+.tabs button { border: 0; background: transparent; }
+.tabs button.active { background: #fff; box-shadow: 0 1px 5px #10182828; }
+.message-row { display: grid; grid-template-columns: auto minmax(180px, 2fr) minmax(100px, .7fr) minmax(130px, 1fr) auto; gap: 9px; align-items: end; margin-bottom: 10px; padding: 12px; border: 1px solid #dce2eb; border-radius: 10px; }
+.reorder { display: flex; gap: 4px; }
+.reorder button { width: 34px; padding: 4px; }
+.delete-message { width: auto; }
+.add-message { color: #2866e8; background: #f7faff; border-style: dashed; }
+.add-message:disabled { cursor: not-allowed; color: #98a2b3; background: #eaecf0; border-color: #d0d5dd; }
+.sequence-box { margin-top: 14px; padding: 16px; border-left: 4px solid #20a94b; background: #f7faf8; }
+.sequence-box h3 { margin: 0 0 5px; }
+.note { margin: 0 0 14px; color: #667085; }
+.sequence-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.sequence-address { grid-column: 1 / -1; }
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
 .save-bar {
   position: sticky; bottom: 12px; z-index: 2;
@@ -62,4 +79,9 @@ button { cursor: pointer; font-weight: 650; }
 @media (max-width: 700px) {
   body { padding: 14px; }
   .grid.two { grid-template-columns: 1fr; }
+  .key-heading { align-items: flex-start; flex-direction: column; }
+  .message-row { grid-template-columns: auto 1fr; }
+  .message-row > div:not(.reorder), .delete-message { grid-column: 2; }
+  .sequence-grid { grid-template-columns: 1fr; }
+  .sequence-address { grid-column: auto; }
 }

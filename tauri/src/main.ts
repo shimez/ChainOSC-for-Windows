@@ -1,154 +1,121 @@
 import { invoke } from "@tauri-apps/api/core";
 import { register, unregisterAll, type ShortcutEvent } from "@tauri-apps/plugin-global-shortcut";
 
-type ValueType = "int" | "float" | "string";
-type KeySettings = { id: string; name: string; hotkey: string; address: string; valueType: ValueType; pressValue: string; releaseValue: string };
-type Settings = { version: "0.2.0"; host: string; port: number; keys: KeySettings[] };
-const storageKey = "chainosc-tauri-settings-v2";
-const legacyStorageKey = "chainosc-tauri-settings-v1";
+type ValueType = "float" | "int" | "string";
+type KeyMode = "pressRelease" | "sequence";
+type OscMessage = { address: string; valueType: ValueType; value: string };
+type SequenceSettings = { address: string; valueType: ValueType; start: number; end: number; step: number };
+type KeySettings = { id: string; name: string; hotkey: string; mode: KeyMode; press: OscMessage[]; release: OscMessage[]; sequence: SequenceSettings };
+type Settings = { version: "0.3.0"; host: string; port: number; keys: KeySettings[] };
+type DevicePreset = { format: string; schemaVersion: number; deviceType: number; deviceTypeName?: string; key: { mode: number; press: PresetMessage[]; release: PresetMessage[]; sequence: { address: string; type: number; start: number; end: number; step: number } } };
+type PresetMessage = { address: string; value: string; type: number };
+
+const storageKey = "chainosc-tauri-settings-v3";
+const v2StorageKey = "chainosc-tauri-settings-v2";
+const v1StorageKey = "chainosc-tauri-settings-v1";
+const maxMessages = 8;
 let nextKeyNumber = 1;
 let recordingHotkeyField: HTMLInputElement | null = null;
+const sequenceValues = new Map<string, number>();
 
-const newKey = (): KeySettings => ({ id: crypto.randomUUID(), name: `Key ${nextKeyNumber++}`, hotkey: "", address: "/avatar/parameters/ChainOSCKey", valueType: "int", pressValue: "1", releaseValue: "0" });
-const defaults = (): Settings => { const key = newKey(); key.hotkey = "F8"; return { version: "0.2.0", host: "127.0.0.1", port: 9000, keys: [key] }; };
+const defaultMessage = (value: string): OscMessage => ({ address: "/avatar/parameters/ChainOSCKey", valueType: "int", value });
+const newKey = (): KeySettings => ({ id: crypto.randomUUID(), name: `Key ${nextKeyNumber++}`, hotkey: "", mode: "pressRelease", press: [defaultMessage("1")], release: [defaultMessage("0")], sequence: { address: "/avatar/parameters/ChainOSCSequence", valueType: "float", start: 0, end: 1, step: 1 } });
+const defaults = (): Settings => { const key = newKey(); key.hotkey = "F8"; return { version: "0.3.0", host: "127.0.0.1", port: 9000, keys: [key] }; };
 const element = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
 const errorText = (error: unknown) => error instanceof Error ? error.message : String(error);
 
-function log(message: string, level = ""): void {
-  const line = document.createElement("div"); line.className = `line ${level}`;
-  line.textContent = `${new Date().toLocaleTimeString()}  ${message}`;
-  const target = element<HTMLDivElement>("log"); target.append(line); target.scrollTop = target.scrollHeight;
-}
-function status(message: string, level = ""): void {
-  const target = element<HTMLDivElement>("status"); target.textContent = message; target.className = `status ${level}`;
-}
+function log(message: string, level = ""): void { const line = document.createElement("div"); line.className = `line ${level}`; line.textContent = `${new Date().toLocaleTimeString()}  ${message}`; const target = element<HTMLDivElement>("log"); target.append(line); target.scrollTop = target.scrollHeight; }
+function status(message: string, level = ""): void { const target = element<HTMLDivElement>("status"); target.textContent = message; target.className = `status ${level}`; }
+function hotkeyFeedback(field: HTMLInputElement, message: string): void { const feedback = field.closest("div")?.querySelector(".hotkey-feedback") as HTMLElement | null; if (feedback) feedback.textContent = message; feedback?.classList.toggle("error", Boolean(message)); }
+function explainAssignedHotkey(field: HTMLInputElement, hotkey: string, owner: string): void { const message = `${hotkey} is already assigned to ${owner}. Choose a different hotkey.`; hotkeyFeedback(field, message); status(message, "error"); }
 
-function hotkeyFeedback(field: HTMLInputElement, message: string): void {
-  const feedback = field.closest("div")?.querySelector(".hotkey-feedback") as HTMLElement | null;
-  if (feedback) feedback.textContent = message;
-  feedback?.classList.toggle("error", Boolean(message));
-}
-
-function explainAssignedHotkey(field: HTMLInputElement, hotkey: string, owner: string): void {
-  const message = `${hotkey} is already assigned to ${owner}. Choose a different hotkey.`;
-  hotkeyFeedback(field, message);
-  status(message, "error");
+function migrateKey(old: any): KeySettings {
+  if (Array.isArray(old.press)) return { ...newKey(), ...old, id: old.id || crypto.randomUUID(), mode: old.mode === "sequence" ? "sequence" : "pressRelease" };
+  return { ...newKey(), id: old.id || crypto.randomUUID(), name: old.name || "Key", hotkey: old.hotkey || "", press: [{ address: old.address, valueType: old.valueType, value: old.pressValue }], release: [{ address: old.address, valueType: old.valueType, value: old.releaseValue }] };
 }
 function loadSettings(): Settings {
   try {
-    const stored = localStorage.getItem(storageKey);
-    if (stored) { const parsed = JSON.parse(stored) as Settings; parsed.version = "0.2.0"; parsed.keys = Array.isArray(parsed.keys) ? parsed.keys : []; return parsed; }
-    const legacy = localStorage.getItem(legacyStorageKey);
-    if (!legacy) return defaults();
-    const old = JSON.parse(legacy);
-    return { version: "0.2.0", host: old.host ?? "127.0.0.1", port: old.port ?? 9000, keys: [{ id: crypto.randomUUID(), name: "Key 1", hotkey: old.hotkey ?? "F8", address: old.address ?? "/avatar/parameters/ChainOSCKey", valueType: old.valueType ?? "int", pressValue: old.pressValue ?? "1", releaseValue: old.releaseValue ?? "0" }] };
+    const current = localStorage.getItem(storageKey);
+    if (current) { const parsed = JSON.parse(current); return { version: "0.3.0", host: parsed.host, port: parsed.port, keys: (parsed.keys || []).map(migrateKey) }; }
+    const v2 = localStorage.getItem(v2StorageKey);
+    if (v2) { const parsed = JSON.parse(v2); return { version: "0.3.0", host: parsed.host, port: parsed.port, keys: (parsed.keys || []).map(migrateKey) }; }
+    const v1 = localStorage.getItem(v1StorageKey);
+    if (!v1) return defaults();
+    const old = JSON.parse(v1); return { version: "0.3.0", host: old.host ?? "127.0.0.1", port: old.port ?? 9000, keys: [migrateKey({ ...old, id: crypto.randomUUID(), name: "Key 1" })] };
   } catch (error) { log(`Saved settings could not be loaded: ${errorText(error)}`, "error"); return defaults(); }
 }
 
-function shortcutKey(event: KeyboardEvent): string | null {
-  if (["Control", "Shift", "Alt", "Meta"].includes(event.key)) return null;
-  if (/^Key[A-Z]$/.test(event.code)) return event.code.slice(3);
-  if (/^Digit[0-9]$/.test(event.code)) return event.code.slice(5);
-  if (/^F([1-9]|1[0-9]|2[0-4])$/.test(event.key)) return event.key;
-  const names: Record<string, string> = {
-    " ": "Space", Escape: "Escape", Enter: "Enter", Tab: "Tab",
-    ArrowUp: "ArrowUp", ArrowDown: "ArrowDown", ArrowLeft: "ArrowLeft", ArrowRight: "ArrowRight",
-    Home: "Home", End: "End", PageUp: "PageUp", PageDown: "PageDown",
-    Insert: "Insert", Delete: "Delete", Backspace: "Backspace",
-  };
-  return names[event.key] ?? (event.key.length === 1 ? event.key.toUpperCase() : null);
+function shortcutKey(event: KeyboardEvent): string | null { if (["Control", "Shift", "Alt", "Meta"].includes(event.key)) return null; if (/^Key[A-Z]$/.test(event.code)) return event.code.slice(3); if (/^Digit[0-9]$/.test(event.code)) return event.code.slice(5); if (/^F([1-9]|1[0-9]|2[0-4])$/.test(event.key)) return event.key; const names: Record<string, string> = { " ": "Space", Escape: "Escape", Enter: "Enter", Tab: "Tab", ArrowUp: "ArrowUp", ArrowDown: "ArrowDown", ArrowLeft: "ArrowLeft", ArrowRight: "ArrowRight", Home: "Home", End: "End", PageUp: "PageUp", PageDown: "PageDown", Insert: "Insert", Delete: "Delete", Backspace: "Backspace" }; return names[event.key] ?? (event.key.length === 1 ? event.key.toUpperCase() : null); }
+function recordShortcut(event: KeyboardEvent, field: HTMLInputElement): void {
+  event.preventDefault(); event.stopPropagation();
+  if ((event.key === "Backspace" || event.key === "Delete") && !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey) { field.value = ""; hotkeyFeedback(field, ""); return; }
+  const key = shortcutKey(event); if (!key) return;
+  const parts: string[] = []; if (event.ctrlKey) parts.push("Ctrl"); if (event.altKey) parts.push("Alt"); if (event.shiftKey) parts.push("Shift"); if (event.metaKey) parts.push("Super"); parts.push(key); const shortcut = parts.join("+");
+  const duplicate = [...document.querySelectorAll<HTMLInputElement>(".hotkey")].find((candidate) => candidate !== field && candidate.value.toLowerCase() === shortcut.toLowerCase());
+  if (duplicate) { const owner = (duplicate.closest(".key-card")?.querySelector(".key-name") as HTMLInputElement | null)?.value || "another Key"; explainAssignedHotkey(field, shortcut, owner); return; }
+  field.value = shortcut; hotkeyFeedback(field, ""); status(`${shortcut} selected. Save Settings to activate it.`);
 }
 
-function recordShortcut(event: KeyboardEvent, field: HTMLInputElement): void {
-  event.preventDefault();
-  event.stopPropagation();
-  if ((event.key === "Backspace" || event.key === "Delete") && !event.ctrlKey && !event.altKey && !event.shiftKey && !event.metaKey) {
-    field.value = "";
-    hotkeyFeedback(field, "");
-    return;
-  }
-  const key = shortcutKey(event);
-  if (!key) return;
-  const parts: string[] = [];
-  if (event.ctrlKey) parts.push("Ctrl");
-  if (event.altKey) parts.push("Alt");
-  if (event.shiftKey) parts.push("Shift");
-  if (event.metaKey) parts.push("Super");
-  parts.push(key);
-  const shortcut = parts.join("+");
-  const duplicate = [...document.querySelectorAll<HTMLInputElement>(".hotkey")]
-    .find((candidate) => candidate !== field && candidate.value.toLowerCase() === shortcut.toLowerCase());
-  if (duplicate) {
-    const owner = (duplicate.closest(".key-card")?.querySelector(".key-name") as HTMLInputElement | null)?.value || "another Key";
-    explainAssignedHotkey(field, shortcut, owner);
-    return;
-  }
-  field.value = shortcut;
-  hotkeyFeedback(field, "");
-  status(`${shortcut} selected. Save Settings to activate it.`);
-  field.dispatchEvent(new Event("change", { bubbles: true }));
+function messageRow(message: OscMessage): HTMLElement {
+  const row = document.createElement("div"); row.className = "message-row";
+  row.innerHTML = `<div class="reorder"><button class="move-up" type="button" title="Move up">↑</button><button class="move-down" type="button" title="Move down">↓</button></div><div><label>OSC Address</label><input class="msg-address" maxlength="192"></div><div><label>Type</label><select class="msg-type"><option value="float">Float</option><option value="int">Int</option><option value="string">String</option></select></div><div><label>Value</label><input class="msg-value" maxlength="128"></div><button class="danger delete-message" type="button">Delete</button>`;
+  (row.querySelector(".msg-address") as HTMLInputElement).value = message.address; (row.querySelector(".msg-type") as HTMLSelectElement).value = message.valueType; (row.querySelector(".msg-value") as HTMLInputElement).value = message.value;
+  row.querySelector(".move-up")!.addEventListener("click", () => { if (row.previousElementSibling) row.parentElement!.insertBefore(row, row.previousElementSibling); updateCard(row.closest(".key-card") as HTMLElement); });
+  row.querySelector(".move-down")!.addEventListener("click", () => { if (row.nextElementSibling) row.parentElement!.insertBefore(row.nextElementSibling, row); updateCard(row.closest(".key-card") as HTMLElement); });
+  row.querySelector(".delete-message")!.addEventListener("click", () => { const card = row.closest(".key-card") as HTMLElement; row.remove(); updateCard(card); });
+  return row;
+}
+function totalMessages(card: HTMLElement): number { return card.querySelectorAll(".message-row").length; }
+function activeList(card: HTMLElement): HTMLElement { return card.querySelector(card.dataset.active === "release" ? ".release-list" : ".press-list") as HTMLElement; }
+function selectTab(card: HTMLElement, tab: "press" | "release"): void { card.dataset.active = tab; card.querySelector(".press-tab")!.classList.toggle("active", tab === "press"); card.querySelector(".release-tab")!.classList.toggle("active", tab === "release"); (card.querySelector(".press-list") as HTMLElement).hidden = tab !== "press"; (card.querySelector(".release-list") as HTMLElement).hidden = tab !== "release"; }
+function updateCard(card: HTMLElement): void {
+  const mode = (card.querySelector(".key-mode") as HTMLSelectElement).value;
+  (card.querySelector(".press-release") as HTMLElement).hidden = mode !== "pressRelease"; (card.querySelector(".sequence-box") as HTMLElement).hidden = mode !== "sequence";
+  const total = totalMessages(card); (card.querySelector(".message-count") as HTMLElement).textContent = `Messages ${total} / ${maxMessages}`;
+  const add = card.querySelector(".add-message") as HTMLButtonElement; add.disabled = total >= maxMessages; add.textContent = total >= maxMessages ? "Maximum 8 OSC Messages" : "+ Add OSC Message";
 }
 
 function keyCard(key: KeySettings): HTMLElement {
-  const card = document.createElement("section"); card.className = "card key-card"; card.dataset.keyId = key.id;
-  card.innerHTML = `<div class="key-heading"><h2></h2><button class="danger delete-key" type="button">Delete Key</button></div><div class="grid two"><div><label>Key Name</label><input class="key-name" maxlength="64"></div><div><label>Global Hotkey</label><input class="hotkey" readonly placeholder="Click here, then press a shortcut"><small>Click the field and press a key combination. Backspace or Delete clears it.</small><small class="hotkey-feedback" aria-live="polite"></small></div><div class="wide"><label>OSC Address</label><input class="address" maxlength="192"></div><div><label>OSC Type</label><select class="value-type"><option value="int">Int</option><option value="float">Float</option><option value="string">String</option></select></div><div></div><div><label>Press Value</label><input class="press-value" maxlength="128"></div><div><label>Release Value</label><input class="release-value" maxlength="128"></div></div><div class="actions"><button class="secondary test-press" type="button">Test Press</button><button class="secondary test-release" type="button">Test Release</button></div>`;
-  card.querySelector("h2")!.textContent = key.name;
-  for (const [selector, value] of [[".key-name", key.name], [".hotkey", key.hotkey], [".address", key.address], [".press-value", key.pressValue], [".release-value", key.releaseValue]]) (card.querySelector(selector) as HTMLInputElement).value = value;
-  (card.querySelector(".value-type") as HTMLSelectElement).value = key.valueType;
-  const hotkeyField = card.querySelector(".hotkey") as HTMLInputElement;
-  hotkeyField.addEventListener("keydown", (event) => recordShortcut(event, hotkeyField));
-  hotkeyField.addEventListener("focus", () => { recordingHotkeyField = hotkeyField; hotkeyField.select(); hotkeyFeedback(hotkeyField, ""); });
-  hotkeyField.addEventListener("blur", () => { if (recordingHotkeyField === hotkeyField) recordingHotkeyField = null; });
+  const card = document.createElement("section"); card.className = "card key-card"; card.dataset.keyId = key.id; card.dataset.active = "press";
+  card.innerHTML = `<div class="key-heading"><h2></h2><div class="key-actions"><button class="preset-export secondary" type="button">Export Preset</button><button class="preset-import secondary" type="button">Import Preset</button><input class="preset-file" type="file" accept=".json,application/json" hidden><button class="danger delete-key" type="button">Delete Key</button></div></div><div class="grid two"><div><label>Key Name</label><input class="key-name" maxlength="64"></div><div><label>Global Hotkey</label><input class="hotkey" readonly placeholder="Click here, then press a shortcut"><small>Click and press a key combination. Backspace or Delete clears it.</small><small class="hotkey-feedback" aria-live="polite"></small></div></div><div class="mode-box"><label>Key Mode</label><select class="key-mode"><option value="pressRelease">Press / Release</option><option value="sequence">Sequence (press only)</option></select></div><div class="press-release"><div class="message-summary"><strong class="message-count"></strong><span>Press + Release</span></div><div class="tabs"><button class="press-tab active" type="button">Press</button><button class="release-tab" type="button">Release</button></div><div class="press-list"></div><div class="release-list" hidden></div><button class="add-message" type="button">+ Add OSC Message</button></div><div class="sequence-box" hidden><h3>Sequence</h3><p class="note">Advance from Start by Step on each press, then return to Start after End.</p><div class="sequence-grid"><div class="sequence-address"><label>OSC Address</label><input class="seq-address" maxlength="192"></div><div><label>Start</label><input class="seq-start" type="number" step="any"></div><div><label>End</label><input class="seq-end" type="number" step="any"></div><div><label>Step</label><input class="seq-step" type="number" step="any"></div><div><label>Type</label><select class="seq-type"><option value="float">Float</option><option value="int">Int</option><option value="string">String</option></select></div></div></div><div class="actions"><button class="secondary test-press" type="button">Test Press</button><button class="secondary test-release" type="button">Test Release</button></div>`;
+  card.querySelector("h2")!.textContent = key.name; (card.querySelector(".key-name") as HTMLInputElement).value = key.name; (card.querySelector(".hotkey") as HTMLInputElement).value = key.hotkey; (card.querySelector(".key-mode") as HTMLSelectElement).value = key.mode;
+  key.press.forEach((message) => card.querySelector(".press-list")!.append(messageRow(message))); key.release.forEach((message) => card.querySelector(".release-list")!.append(messageRow(message)));
+  (card.querySelector(".seq-address") as HTMLInputElement).value = key.sequence.address; (card.querySelector(".seq-type") as HTMLSelectElement).value = key.sequence.valueType; (card.querySelector(".seq-start") as HTMLInputElement).value = String(key.sequence.start); (card.querySelector(".seq-end") as HTMLInputElement).value = String(key.sequence.end); (card.querySelector(".seq-step") as HTMLInputElement).value = String(key.sequence.step);
   card.querySelector(".key-name")!.addEventListener("input", (event) => { card.querySelector("h2")!.textContent = (event.target as HTMLInputElement).value || "Unnamed Key"; });
-  card.querySelector(".delete-key")!.addEventListener("click", () => card.remove());
-  card.querySelector(".test-press")!.addEventListener("click", () => testCard(card, true));
-  card.querySelector(".test-release")!.addEventListener("click", () => testCard(card, false));
-  return card;
+  const hotkey = card.querySelector(".hotkey") as HTMLInputElement; hotkey.addEventListener("keydown", (event) => recordShortcut(event, hotkey)); hotkey.addEventListener("focus", () => { recordingHotkeyField = hotkey; hotkey.select(); hotkeyFeedback(hotkey, ""); }); hotkey.addEventListener("blur", () => { if (recordingHotkeyField === hotkey) recordingHotkeyField = null; });
+  card.querySelector(".key-mode")!.addEventListener("change", () => updateCard(card)); card.querySelector(".press-tab")!.addEventListener("click", () => selectTab(card, "press")); card.querySelector(".release-tab")!.addEventListener("click", () => selectTab(card, "release"));
+  card.querySelector(".add-message")!.addEventListener("click", () => { if (totalMessages(card) >= maxMessages) return; activeList(card).append(messageRow(defaultMessage(card.dataset.active === "release" ? "0" : "1"))); updateCard(card); });
+  card.querySelector(".delete-key")!.addEventListener("click", () => card.remove()); card.querySelector(".test-press")!.addEventListener("click", () => testCard(card, true)); card.querySelector(".test-release")!.addEventListener("click", () => testCard(card, false));
+  card.querySelector(".preset-export")!.addEventListener("click", () => exportPreset(card)); const file = card.querySelector(".preset-file") as HTMLInputElement; card.querySelector(".preset-import")!.addEventListener("click", () => file.click()); file.addEventListener("change", () => importPreset(card, file));
+  updateCard(card); return card;
 }
 function renderKey(key: KeySettings): void { element("keys").append(keyCard(key)); }
+
+function readMessage(row: Element, owner: string): OscMessage { const address = (row.querySelector(".msg-address") as HTMLInputElement).value.trim(); const valueType = (row.querySelector(".msg-type") as HTMLSelectElement).value as ValueType; const value = (row.querySelector(".msg-value") as HTMLInputElement).value; if (!address.startsWith("/")) throw new Error(`${owner}: OSC Address must start with '/'.`); if (valueType === "int" && !Number.isInteger(Number(value))) throw new Error(`${owner}: Invalid Int value.`); if (valueType === "float" && !Number.isFinite(Number(value))) throw new Error(`${owner}: Invalid Float value.`); return { address, valueType, value }; }
+function finiteInput(card: Element, selector: string, owner: string): number { const value = Number((card.querySelector(selector) as HTMLInputElement).value); if (!Number.isFinite(value)) throw new Error(`${owner}: Sequence value is invalid.`); return value; }
 function readKey(card: Element, index: number): KeySettings {
-  const value = (selector: string) => (card.querySelector(selector) as HTMLInputElement).value;
-  const key: KeySettings = { id: (card as HTMLElement).dataset.keyId || crypto.randomUUID(), name: value(".key-name").trim(), hotkey: value(".hotkey").replace(/\s+/g, "").trim(), address: value(".address").trim(), valueType: (card.querySelector(".value-type") as HTMLSelectElement).value as ValueType, pressValue: value(".press-value"), releaseValue: value(".release-value") };
-  if (!key.name) throw new Error(`Key ${index}: Key Name is required.`);
-  if (!key.hotkey) throw new Error(`${key.name}: Global Hotkey is required.`);
-  if (!key.address.startsWith("/")) throw new Error(`${key.name}: OSC Address must start with '/'.`);
-  return key;
+  const text = (selector: string) => (card.querySelector(selector) as HTMLInputElement).value; const name = text(".key-name").trim(); const hotkey = text(".hotkey").trim(); if (!name) throw new Error(`Key ${index}: Key Name is required.`); if (!hotkey) throw new Error(`${name}: Global Hotkey is required.`);
+  const press = [...card.querySelectorAll(".press-list .message-row")].map((row) => readMessage(row, name)); const release = [...card.querySelectorAll(".release-list .message-row")].map((row) => readMessage(row, name)); if (press.length + release.length > maxMessages) throw new Error(`${name}: Messages exceed the limit of 8.`);
+  const sequence: SequenceSettings = { address: text(".seq-address").trim(), valueType: (card.querySelector(".seq-type") as HTMLSelectElement).value as ValueType, start: finiteInput(card, ".seq-start", name), end: finiteInput(card, ".seq-end", name), step: finiteInput(card, ".seq-step", name) }; if (!sequence.address.startsWith("/")) throw new Error(`${name}: Sequence OSC Address must start with '/'.`); if (sequence.step === 0) throw new Error(`${name}: Sequence Step cannot be zero.`);
+  return { id: (card as HTMLElement).dataset.keyId || crypto.randomUUID(), name, hotkey, mode: (card.querySelector(".key-mode") as HTMLSelectElement).value as KeyMode, press, release, sequence };
 }
-function readSettings(): Settings {
-  const host = element<HTMLInputElement>("host").value.trim(); const port = Number(element<HTMLInputElement>("port").value);
-  if (!host) throw new Error("OSC host is required.");
-  if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("UDP port must be 1–65535.");
-  const keys = [...document.querySelectorAll(".key-card")].map((card, index) => readKey(card, index + 1));
-  const shortcuts = new Set<string>();
-  for (const key of keys) { const normalized = key.hotkey.toLowerCase(); if (shortcuts.has(normalized)) throw new Error(`Global Hotkey ${key.hotkey} is assigned more than once.`); shortcuts.add(normalized); }
-  return { version: "0.2.0", host, port, keys };
+function readSettings(): Settings { const host = element<HTMLInputElement>("host").value.trim(); const port = Number(element<HTMLInputElement>("port").value); if (!host) throw new Error("OSC host is required."); if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error("UDP port must be 1–65535."); const keys = [...document.querySelectorAll(".key-card")].map((card, index) => readKey(card, index + 1)); const shortcuts = new Set<string>(); for (const key of keys) { const normalized = key.hotkey.toLowerCase(); if (shortcuts.has(normalized)) throw new Error(`Global Hotkey ${key.hotkey} is assigned more than once.`); shortcuts.add(normalized); } return { version: "0.3.0", host, port, keys }; }
+
+async function sendMessage(settings: Settings, key: KeySettings, message: OscMessage, label: string): Promise<void> { await invoke<number>("send_osc", { host: settings.host, port: settings.port, address: message.address, valueType: message.valueType, value: message.value }); log(`${key.name} ${label}: ${message.address} ${message.valueType} ${message.value}`, "sent"); }
+async function sendKey(settings: Settings, key: KeySettings, pressed: boolean): Promise<void> {
+  if (key.mode === "sequence") { if (!pressed) return; const current = sequenceValues.has(key.id) ? sequenceValues.get(key.id)! : key.sequence.start; const value = key.sequence.valueType === "int" ? String(Math.trunc(current)) : String(current); await sendMessage(settings, key, { address: key.sequence.address, valueType: key.sequence.valueType, value }, "SEQUENCE"); const next = current + key.sequence.step; const beyond = key.sequence.step > 0 ? next > key.sequence.end : next < key.sequence.end; sequenceValues.set(key.id, beyond ? key.sequence.start : next); return; }
+  for (const message of pressed ? key.press : key.release) await sendMessage(settings, key, message, pressed ? "PRESSED" : "RELEASED");
 }
-async function send(settings: Settings, key: KeySettings, pressed: boolean): Promise<void> {
-  const value = pressed ? key.pressValue : key.releaseValue;
-  await invoke<number>("send_osc", { host: settings.host, port: settings.port, address: key.address, valueType: key.valueType, value });
-  log(`${key.name} ${pressed ? "PRESSED" : "RELEASED"}: ${key.address} ${key.valueType} ${value}`, "sent");
-}
-async function testCard(card: HTMLElement, pressed: boolean): Promise<void> {
-  try { const settings = readSettings(); const key = settings.keys.find((item) => item.id === card.dataset.keyId)!; await send(settings, key, pressed); }
-  catch (error) { log(`OSC send failed: ${errorText(error)}`, "error"); }
-}
-async function registerHotkeys(settings: Settings): Promise<void> {
-  await unregisterAll();
-  for (const key of settings.keys) await register(key.hotkey, async (event: ShortcutEvent) => {
-    if (recordingHotkeyField) {
-      if (event.state === "Pressed") explainAssignedHotkey(recordingHotkeyField, key.hotkey, key.name);
-      return;
-    }
-    try { await send(settings, key, event.state === "Pressed"); } catch (error) { log(`OSC send failed: ${errorText(error)}`, "error"); }
-  });
-}
-async function save(): Promise<void> {
-  try { const settings = readSettings(); await registerHotkeys(settings); localStorage.setItem(storageKey, JSON.stringify(settings)); status(`Saved. ${settings.keys.length} global hotkey(s) active.`, "ok"); log(`Settings saved; registered ${settings.keys.length} hotkey(s).`, "ok"); }
-  catch (error) { status(errorText(error), "error"); log(`Save failed: ${errorText(error)}`, "error"); }
-}
-window.addEventListener("DOMContentLoaded", async () => {
-  const settings = loadSettings(); nextKeyNumber = settings.keys.length + 1; element<HTMLInputElement>("host").value = settings.host; element<HTMLInputElement>("port").value = String(settings.port); settings.keys.forEach(renderKey);
-  element("add-key").addEventListener("click", () => renderKey(newKey())); element("save").addEventListener("click", save);
-  try { await registerHotkeys(settings); status(`${settings.keys.length} global hotkey(s) active.`, "ok"); log(`Loaded v0.2.0 settings; registered ${settings.keys.length} hotkey(s).`, "ok"); }
-  catch (error) { status(`Hotkey registration failed: ${errorText(error)}`, "error"); log(`Startup failed: ${errorText(error)}`, "error"); }
-});
+async function testCard(card: HTMLElement, pressed: boolean): Promise<void> { try { const settings = readSettings(); const key = settings.keys.find((item) => item.id === card.dataset.keyId)!; await sendKey(settings, key, pressed); } catch (error) { log(`OSC send failed: ${errorText(error)}`, "error"); } }
+async function registerHotkeys(settings: Settings): Promise<void> { await unregisterAll(); for (const key of settings.keys) await register(key.hotkey, async (event: ShortcutEvent) => { if (recordingHotkeyField) { if (event.state === "Pressed") explainAssignedHotkey(recordingHotkeyField, key.hotkey, key.name); return; } try { await sendKey(settings, key, event.state === "Pressed"); } catch (error) { log(`OSC send failed: ${errorText(error)}`, "error"); } }); }
+async function save(): Promise<void> { try { const settings = readSettings(); await registerHotkeys(settings); localStorage.setItem(storageKey, JSON.stringify(settings)); status(`Saved. ${settings.keys.length} global hotkey(s) active.`, "ok"); log(`Settings saved; registered ${settings.keys.length} hotkey(s).`, "ok"); } catch (error) { status(errorText(error), "error"); log(`Save failed: ${errorText(error)}`, "error"); } }
+
+const typeNumber = (type: ValueType) => type === "float" ? 0 : type === "int" ? 1 : 2;
+const numberType = (type: number): ValueType => { if (type === 0) return "float"; if (type === 1) return "int"; if (type === 2) return "string"; throw new Error("OSC value type is invalid."); };
+function presetFor(key: KeySettings): DevicePreset { return { format: "ChainOSC-device-preset", schemaVersion: 1, deviceType: 3, deviceTypeName: "Key", key: { mode: key.mode === "sequence" ? 1 : 0, press: key.press.map((m) => ({ address: m.address, value: m.value, type: typeNumber(m.valueType) })), release: key.release.map((m) => ({ address: m.address, value: m.value, type: typeNumber(m.valueType) })), sequence: { address: key.sequence.address, type: typeNumber(key.sequence.valueType), start: key.sequence.start, end: key.sequence.end, step: key.sequence.step } } }; }
+function exportPreset(card: HTMLElement): void { try { const key = readKey(card, 1); const blob = new Blob([JSON.stringify(presetFor(key), null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `ChainOSC-Key-${key.name.replace(/[^a-z0-9_-]+/gi, "-") || "preset"}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(link.href), 1000); status(`Preset exported for ${key.name}.`, "ok"); } catch (error) { status(`Preset export failed: ${errorText(error)}`, "error"); } }
+function validatePreset(value: any): DevicePreset { if (!value || !["ChainOSC-device-preset", "M5ChainOSC-device-preset"].includes(value.format)) throw new Error("This is not a supported ChainOSC device preset."); if (value.schemaVersion !== 1) throw new Error("Unsupported preset schemaVersion."); if (value.deviceType !== 3) throw new Error("Device type mismatch. Select a Key preset."); const key = value.key; if (!key || ![0, 1].includes(key.mode) || !Array.isArray(key.press) || !Array.isArray(key.release) || !key.sequence) throw new Error("Key settings are missing or invalid."); if (key.press.length + key.release.length > maxMessages) throw new Error("Key messages exceed the limit of 8."); return value as DevicePreset; }
+function presetMessage(value: PresetMessage): OscMessage { if (typeof value.address !== "string" || !value.address.startsWith("/") || typeof value.value !== "string") throw new Error("A preset OSC message is invalid."); return { address: value.address, value: value.value, valueType: numberType(value.type) }; }
+async function importPreset(card: HTMLElement, input: HTMLInputElement): Promise<void> { try { const file = input.files?.[0]; if (!file) return; if (file.size > 16384) throw new Error("The preset file exceeds 16 KiB."); const preset = validatePreset(JSON.parse(await file.text())); const name = (card.querySelector(".key-name") as HTMLInputElement).value.trim() || "Key"; const hotkey = (card.querySelector(".hotkey") as HTMLInputElement).value; const sequence = preset.key.sequence; if (typeof sequence.address !== "string" || !sequence.address.startsWith("/") || ![sequence.start, sequence.end, sequence.step].every(Number.isFinite) || sequence.step === 0) throw new Error("Sequence settings are invalid."); const imported: KeySettings = { id: card.dataset.keyId || crypto.randomUUID(), name, hotkey, mode: preset.key.mode === 1 ? "sequence" : "pressRelease", press: preset.key.press.map(presetMessage), release: preset.key.release.map(presetMessage), sequence: { address: sequence.address, valueType: numberType(sequence.type), start: sequence.start, end: sequence.end, step: sequence.step } }; const replacement = keyCard(imported); card.replaceWith(replacement); status(`Preset imported into ${name}. Use Save Settings to keep it.`, "ok"); log(`Imported compatible Key preset into ${name}.`, "ok"); } catch (error) { status(`Preset import failed: ${errorText(error)}`, "error"); log(`Preset import failed: ${errorText(error)}`, "error"); } finally { input.value = ""; } }
+
+window.addEventListener("DOMContentLoaded", async () => { const settings = loadSettings(); nextKeyNumber = settings.keys.length + 1; element<HTMLInputElement>("host").value = settings.host; element<HTMLInputElement>("port").value = String(settings.port); settings.keys.forEach(renderKey); element("add-key").addEventListener("click", () => renderKey(newKey())); element("save").addEventListener("click", save); try { await registerHotkeys(settings); status(`${settings.keys.length} global hotkey(s) active.`, "ok"); log(`Loaded v0.3.0 settings; registered ${settings.keys.length} hotkey(s).`, "ok"); } catch (error) { status(`Hotkey registration failed: ${errorText(error)}`, "error"); log(`Startup failed: ${errorText(error)}`, "error"); } });

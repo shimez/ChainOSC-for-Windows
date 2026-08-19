@@ -1,8 +1,8 @@
 # ChainOSC for Windows — Tauri prototype
 
-## v0.2.0
+## v0.3.0
 
-This version extends the Tauri prototype with multiple independently configured Keys:
+This version adds ChainOSC-compatible Key behavior and device presets:
 
 - add and delete any number of Keys;
 - a name and independent global hotkey for every Key;
@@ -12,6 +12,11 @@ This version extends the Tauri prototype with multiple independently configured 
 - persistent settings using the application WebView's local storage;
 - automatic migration of the v0.1.0 Key configuration;
 - duplicate global-hotkey validation;
+- up to eight Press and Release OSC messages per Key;
+- message addition, deletion, and ordering;
+- Press / Release and Sequence modes;
+- import and export of `ChainOSC-device-preset` Key JSON files;
+- import support for legacy `M5ChainOSC-device-preset` files.
 - test buttons and an activity log.
 
 The `.NET 10` implementation in the repository root remains the reference
