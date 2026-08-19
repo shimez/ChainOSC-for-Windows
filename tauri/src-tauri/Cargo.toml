@@ -1,6 +1,6 @@
 [package]
 name = "chainosc-for-windows"
-version = "0.4.0"
+version = "0.5.0"
 description = "Lightweight OSC sender controlled by global hotkeys"
 authors = ["shimez"]
 edition = "2021"
@@ -23,3 +23,6 @@ tauri-plugin-opener = "2"
 tauri-plugin-global-shortcut = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading", "Win32_UI_WindowsAndMessaging"] }

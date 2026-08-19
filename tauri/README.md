@@ -1,8 +1,8 @@
 # ChainOSC for Windows — Tauri prototype
 
-## v0.4.0
+## v0.5.0
 
-This version makes ChainOSC usable as a resident Windows application:
+This version completes the everyday resident-app workflow:
 
 - add and delete any number of Keys;
 - a name and independent global hotkey for every Key;
@@ -23,6 +23,9 @@ This version makes ChainOSC usable as a resident Windows application:
 - the tray menu provides Show ChainOSC and Exit commands;
 - Exit fully terminates the application and releases its hotkeys;
 - release builds use a ChainOSC-specific executable name.
+- optional startup with Windows, beginning hidden in the system tray;
+- single-instance enforcement;
+- launching ChainOSC again restores the existing window instead of starting a duplicate.
 - test buttons and an activity log.
 
 The `.NET 10` implementation in the repository root remains the reference

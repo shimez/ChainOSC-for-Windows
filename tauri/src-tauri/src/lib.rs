@@ -1,9 +1,86 @@
-use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
+use std::{net::{SocketAddr, ToSocketAddrs, UdpSocket}, process::Command};
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{TrayIconBuilder, TrayIconEvent},
     Manager, WindowEvent,
 };
+
+const AUTOSTART_NAME: &str = "ChainOSCForWindows";
+const AUTOSTART_KEY: &str = r"HKCU\Software\Microsoft\Windows\CurrentVersion\Run";
+
+#[cfg(windows)]
+struct InstanceGuard(windows_sys::Win32::Foundation::HANDLE);
+
+#[cfg(windows)]
+impl Drop for InstanceGuard {
+    fn drop(&mut self) {
+        unsafe { windows_sys::Win32::Foundation::CloseHandle(self.0) };
+    }
+}
+
+#[cfg(not(windows))]
+struct InstanceGuard;
+
+#[cfg(windows)]
+fn single_instance_or_activate() -> Option<InstanceGuard> {
+    use std::{iter::once, ptr::null};
+    use windows_sys::Win32::{
+        Foundation::{GetLastError, ERROR_ALREADY_EXISTS},
+        System::Threading::CreateMutexW,
+        UI::WindowsAndMessaging::{FindWindowW, SetForegroundWindow, ShowWindow, SW_RESTORE},
+    };
+    let mutex_name: Vec<u16> = "Local\\ChainOSCForWindows.SingleInstance".encode_utf16().chain(once(0)).collect();
+    let handle = unsafe { CreateMutexW(null(), 1, mutex_name.as_ptr()) };
+    if handle.is_null() {
+        return Some(InstanceGuard(handle));
+    }
+    if unsafe { GetLastError() } == ERROR_ALREADY_EXISTS {
+        let title: Vec<u16> = "ChainOSC for Windows".encode_utf16().chain(once(0)).collect();
+        let window = unsafe { FindWindowW(null(), title.as_ptr()) };
+        if !window.is_null() {
+            unsafe {
+                ShowWindow(window, SW_RESTORE);
+                SetForegroundWindow(window);
+            }
+        }
+        unsafe { windows_sys::Win32::Foundation::CloseHandle(handle) };
+        return None;
+    }
+    Some(InstanceGuard(handle))
+}
+
+#[cfg(not(windows))]
+fn single_instance_or_activate() -> Option<InstanceGuard> {
+    Some(InstanceGuard)
+}
+
+#[tauri::command]
+fn get_autostart() -> Result<bool, String> {
+    let output = Command::new("reg")
+        .args(["query", AUTOSTART_KEY, "/v", AUTOSTART_NAME])
+        .output()
+        .map_err(|error| format!("Autostart status could not be read: {error}"))?;
+    Ok(output.status.success())
+}
+
+#[tauri::command]
+fn set_autostart(enabled: bool) -> Result<(), String> {
+    if enabled && cfg!(debug_assertions) {
+        return Err("Start with Windows can only be enabled from a release build.".into());
+    }
+    let status = if enabled {
+        let executable = std::env::current_exe().map_err(|error| error.to_string())?;
+        let command = format!("\"{}\" --autostart", executable.display());
+        Command::new("reg").args(["add", AUTOSTART_KEY, "/v", AUTOSTART_NAME, "/t", "REG_SZ", "/d", &command, "/f"]).status()
+    } else {
+        Command::new("reg").args(["delete", AUTOSTART_KEY, "/v", AUTOSTART_NAME, "/f"]).status()
+    }.map_err(|error| format!("Autostart setting could not be changed: {error}"))?;
+    if enabled && !status.success() {
+        return Err("Windows rejected the autostart setting.".into());
+    }
+    // Deleting a value that is already absent is equivalent to disabled.
+    Ok(())
+}
 
 fn show_main_window(app: &tauri::AppHandle) {
     if let Some(window) = app.get_webview_window("main") {
@@ -85,6 +162,9 @@ fn send_osc(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let Some(_instance_guard) = single_instance_or_activate() else {
+        return;
+    };
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
@@ -105,6 +185,11 @@ pub fn run() {
                 tray = tray.icon(icon.clone());
             }
             tray.build(app)?;
+            if std::env::args().any(|argument| argument == "--autostart") {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.hide();
+                }
+            }
             Ok(())
         })
         .on_tray_icon_event(|app, event| {
@@ -122,7 +207,7 @@ pub fn run() {
             }
             _ => {}
         })
-        .invoke_handler(tauri::generate_handler![send_osc])
+        .invoke_handler(tauri::generate_handler![send_osc, get_autostart, set_autostart])
         .run(tauri::generate_context!())
         .expect("error while running ChainOSC for Windows");
 }
