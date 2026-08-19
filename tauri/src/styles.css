@@ -19,6 +19,9 @@ h2 { margin: 0 0 16px; }
   box-shadow: 0 2px 10px #16203316;
 }
 .key-card { border-left: 5px solid #7446cc; }
+.key-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.key-heading .danger { width: auto; min-height: 36px; padding: 6px 12px; }
+.wide { grid-column: 1 / -1; }
 .grid { display: grid; gap: 14px; }
 .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 label { display: block; margin-bottom: 6px; font-weight: 650; }
@@ -28,9 +31,15 @@ input, select, button {
   border: 1px solid #c9d0dc; border-radius: 7px;
   color: inherit; background: #fff; font: inherit;
 }
+.hotkey[readonly] { cursor: pointer; background: #f8faff; }
+.hotkey[readonly]:focus { border-color: #2866e8; outline: 2px solid #2866e833; }
+.hotkey-feedback { min-height: 18px; color: transparent; }
+.hotkey-feedback.error { color: #b42318; }
 button { cursor: pointer; font-weight: 650; }
 .primary { color: #fff; background: #20a94b; border-color: #20a94b; }
 .secondary { color: #2866e8; background: #fff; border-color: #8bb0ff; }
+.danger { color: #c4323f; background: #fff5f5; border-color: #f2b8bd; }
+.add-key { margin-bottom: 4px; color: #2866e8; background: #f7faff; border: 1px dashed #8bb0ff; }
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
 .save-bar {
   position: sticky; bottom: 12px; z-index: 2;

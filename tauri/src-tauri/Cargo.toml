@@ -1,6 +1,6 @@
 [package]
 name = "tauri"
-version = "0.1.0"
+version = "0.2.0"
 description = "Lightweight OSC sender controlled by global hotkeys"
 authors = ["shimez"]
 edition = "2021"

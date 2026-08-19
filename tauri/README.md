@@ -1,14 +1,17 @@
 # ChainOSC for Windows — Tauri prototype
 
-## v0.1.0
+## v0.2.0
 
-This prototype verifies the minimum Tauri implementation:
+This version extends the Tauri prototype with multiple independently configured Keys:
 
-- one configurable global hotkey;
+- add and delete any number of Keys;
+- a name and independent global hotkey for every Key;
 - OSC Press and Release messages;
 - Int, Float, and String OSC values;
 - configurable OSC host, UDP port, and address;
 - persistent settings using the application WebView's local storage;
+- automatic migration of the v0.1.0 Key configuration;
+- duplicate global-hotkey validation;
 - test buttons and an activity log.
 
 The `.NET 10` implementation in the repository root remains the reference
