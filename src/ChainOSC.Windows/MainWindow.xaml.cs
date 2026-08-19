@@ -1,9 +1,11 @@
 using System.IO;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
 using System.Windows.Input;
 using ChainOSC.Core;
+using Microsoft.Win32;
 using Microsoft.Web.WebView2.Core;
 
 namespace ChainOSC.Windows;
@@ -21,6 +23,7 @@ public partial class MainWindow : Window
     private readonly OscUdpSender _oscSender = new();
     private ChainOscSettings _settings;
     private readonly string? _loadWarning;
+    private readonly Dictionary<string, double> _sequenceValues = [];
 
     public MainWindow()
     {
@@ -36,6 +39,7 @@ public partial class MainWindow : Window
         try
         {
             ConfigureHotkeys(_settings);
+            ResetSequences(_settings);
             await Browser.EnsureCoreWebView2Async();
             Browser.CoreWebView2.Settings.AreDevToolsEnabled = true;
             Browser.CoreWebView2.WebMessageReceived += OnWebMessageReceived;
@@ -81,10 +85,11 @@ public partial class MainWindow : Window
             if (request.Action == "save" && request.Settings is not null)
             {
                 Validate(request.Settings);
-                request.Settings.Version = "0.2.0";
+                request.Settings.Version = "0.3.0";
                 ConfigureHotkeys(request.Settings);
                 SettingsStore.Save(request.Settings);
                 _settings = request.Settings;
+                ResetSequences(_settings);
                 await LogAsync($"Saved {_settings.Keys.Count} Key setting(s).", "ok");
             }
             else if (request.Action == "test" && request.KeyId is not null)
@@ -93,8 +98,64 @@ public partial class MainWindow : Window
                 Validate(testSettings);
                 await SendAsync(request.KeyId, request.Pressed, testSettings);
             }
+            else if (request.Action == "exportPreset" && request.Settings is not null &&
+                     request.KeyId is not null)
+            {
+                var key = FindKey(request.Settings, request.KeyId);
+                ValidateKey(key);
+                var dialog = new SaveFileDialog
+                {
+                    Title = "Export ChainOSC Key preset",
+                    Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                    DefaultExt = ".json",
+                    AddExtension = true,
+                    FileName = "ChainOSC-Key-preset.json",
+                };
+                if (dialog.ShowDialog(this) == true)
+                {
+                    await File.WriteAllTextAsync(dialog.FileName,
+                                                 KeyPresetCodec.Export(key));
+                    await LogAsync($"Exported Key preset: {dialog.FileName}", "ok");
+                    PostOperationResult(request.KeyId, "Preset exported.", true);
+                }
+            }
+            else if (request.Action == "importPreset" && request.Settings is not null &&
+                     request.KeyId is not null)
+            {
+                var dialog = new OpenFileDialog
+                {
+                    Title = "Import ChainOSC Key preset",
+                    Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+                    CheckFileExists = true,
+                    Multiselect = false,
+                };
+                if (dialog.ShowDialog(this) != true) return;
+                if (new FileInfo(dialog.FileName).Length > 16 * 1024)
+                    throw new InvalidOperationException(
+                        "The preset file exceeds 16 KiB.");
+                var presetJson = await File.ReadAllTextAsync(dialog.FileName);
+                var key = FindKey(request.Settings, request.KeyId);
+                KeyPresetCodec.Apply(presetJson, key);
+                // A device preset contains only Key behavior. Hotkey conflicts and
+                // other application-wide settings are checked by Save All Settings.
+                ValidateKey(key);
+                request.Settings.Version = "0.3.0";
+                _settings = request.Settings;
+                ResetSequences(_settings);
+                PostSettings();
+                await LogAsync(
+                    $"Imported Key preset into {key.Name}. Use Save All Settings to keep it.",
+                    "ok");
+                PostOperationResult(
+                    request.KeyId,
+                    "Preset imported. Use Save All Settings to keep it.", true);
+            }
         }
-        catch (Exception ex) { await LogAsync(ex.Message, "error"); }
+        catch (Exception ex)
+        {
+            await LogAsync(ex.Message, "error");
+            PostOperationResult(null, ex.Message, false);
+        }
     }
 
     private void OnHotkeyChanged(object? sender, HotkeyEventArgs e) =>
@@ -108,14 +169,52 @@ public partial class MainWindow : Window
         if (key is null) return;
         try
         {
-            var value = pressed ? key.PressValue : key.ReleaseValue;
-            var message = new OscMessage(key.Address, key.Type, value);
-            await _oscSender.SendAsync(sourceSettings.Host, sourceSettings.Port,
-                                       message);
-            await LogAsync($"{key.Name} {(pressed ? "PRESSED" : "RELEASED")}: " +
-                           $"{message.Address} {message.Type} {value}", "sent");
+            if (key.Mode == KeyMode.Sequence)
+            {
+                if (!pressed) return;
+                var sequence = NormalizeSequence(key.Sequence);
+                if (!_sequenceValues.TryGetValue(key.Id, out var value))
+                    value = sequence.Start;
+                var valueText = sequence.Type switch
+                {
+                    OscValueType.Int => Math.Round(value, MidpointRounding.AwayFromZero)
+                        .ToString(CultureInfo.InvariantCulture),
+                    OscValueType.String => value.ToString("0.000", CultureInfo.InvariantCulture),
+                    _ => value.ToString("R", CultureInfo.InvariantCulture),
+                };
+                await SendMessageAsync(sourceSettings, key,
+                    new OscMessageConfiguration
+                    {
+                        Address = sequence.Address,
+                        Type = sequence.Type,
+                        Value = valueText,
+                    }, "SEQUENCE");
+                var next = value + sequence.Step;
+                if ((sequence.Step >= 0 && next > sequence.End + 1e-6) ||
+                    (sequence.Step < 0 && next < sequence.End - 1e-6))
+                    next = sequence.Start;
+                _sequenceValues[key.Id] = next;
+                return;
+            }
+
+            var messages = pressed ? key.Press : key.Release;
+            var eventName = pressed ? "PRESSED" : "RELEASED";
+            foreach (var message in messages)
+                await SendMessageAsync(sourceSettings, key, message, eventName);
         }
         catch (Exception ex) { await LogAsync($"Send failed: {ex.Message}", "error"); }
+    }
+
+    private async Task SendMessageAsync(ChainOscSettings settings,
+                                        KeyConfiguration key,
+                                        OscMessageConfiguration configuration,
+                                        string eventName)
+    {
+        var message = new OscMessage(configuration.Address, configuration.Type,
+                                     configuration.Value);
+        await _oscSender.SendAsync(settings.Host, settings.Port, message);
+        await LogAsync($"{key.Name} {eventName}: {message.Address} " +
+                       $"{message.Type} {message.Value}", "sent");
     }
 
     private static void Validate(ChainOscSettings settings)
@@ -133,16 +232,72 @@ public partial class MainWindow : Window
         {
             if (string.IsNullOrWhiteSpace(key.Id) || !identities.Add(key.Id))
                 throw new InvalidOperationException("Each Key must have a unique identity.");
-            if (string.IsNullOrWhiteSpace(key.Name))
-                throw new InvalidOperationException("Key name is required.");
+            ValidateKey(key);
             if (!TryGetVirtualKey(key.Hotkey, out _))
                 throw new InvalidOperationException($"{key.Name}: unsupported hotkey.");
             var signature = $"{key.Ctrl}:{key.Alt}:{key.Shift}:{key.Win}:{key.Hotkey}";
             if (!hotkeys.Add(signature))
                 throw new InvalidOperationException($"Duplicate hotkey: {key.HotkeyDisplay}");
-            _ = OscPacketBuilder.Build(new OscMessage(key.Address, key.Type, key.PressValue));
-            _ = OscPacketBuilder.Build(new OscMessage(key.Address, key.Type, key.ReleaseValue));
         }
+    }
+
+    private static void ValidateKey(KeyConfiguration key)
+    {
+        if (string.IsNullOrWhiteSpace(key.Name))
+            throw new InvalidOperationException("Key name is required.");
+        if (Utf8Length(key.Name) > 64)
+            throw new InvalidOperationException($"{key.Name}: Key name is too long.");
+        if (key.Press is null || key.Release is null ||
+            key.Press.Count + key.Release.Count > 8)
+            throw new InvalidOperationException(
+                $"{key.Name}: Press and Release messages must total 8 or fewer.");
+        foreach (var message in key.Press.Concat(key.Release))
+            ValidateMessage(key, message);
+        _ = NormalizeSequence(key.Sequence);
+    }
+
+    private static void ValidateMessage(KeyConfiguration key,
+                                        OscMessageConfiguration message)
+    {
+        if (Utf8Length(message.Address) > 192)
+            throw new InvalidOperationException($"{key.Name}: OSC Address is too long.");
+        if (Utf8Length(message.Value) > 128)
+            throw new InvalidOperationException($"{key.Name}: OSC value is too long.");
+        _ = OscPacketBuilder.Build(new OscMessage(message.Address, message.Type,
+                                                   message.Value));
+    }
+
+    private static SequenceConfiguration NormalizeSequence(
+        SequenceConfiguration sequence)
+    {
+        if (sequence is null || string.IsNullOrWhiteSpace(sequence.Address) ||
+            !sequence.Address.StartsWith('/'))
+            throw new InvalidOperationException("Sequence OSC Address must start with '/'.");
+        if (Utf8Length(sequence.Address) > 192)
+            throw new InvalidOperationException("Sequence OSC Address is too long.");
+        if (!double.IsFinite(sequence.Start) || !double.IsFinite(sequence.End) ||
+            !double.IsFinite(sequence.Step) || Math.Abs(sequence.Step) < 1e-9)
+            throw new InvalidOperationException("Sequence values or Step are invalid.");
+        if (sequence.Start <= sequence.End && sequence.Step < 0)
+            sequence.Step = -sequence.Step;
+        if (sequence.Start > sequence.End && sequence.Step > 0)
+            sequence.Step = -sequence.Step;
+        return sequence;
+    }
+
+    private static int Utf8Length(string value) =>
+        System.Text.Encoding.UTF8.GetByteCount(value ?? "");
+
+    private static KeyConfiguration FindKey(ChainOscSettings settings,
+                                            string keyId) =>
+        settings.Keys.FirstOrDefault(key => key.Id == keyId) ??
+        throw new InvalidOperationException("The selected Key was not found.");
+
+    private void ResetSequences(ChainOscSettings settings)
+    {
+        _sequenceValues.Clear();
+        foreach (var key in settings.Keys)
+            _sequenceValues[key.Id] = key.Sequence.Start;
     }
 
     private void ConfigureHotkeys(ChainOscSettings settings)
@@ -175,6 +330,13 @@ public partial class MainWindow : Window
             $"{JsonSerializer.Serialize(level)})");
     }
 
+    private void PostMessage(object message) =>
+        Browser.CoreWebView2.PostWebMessageAsJson(
+            JsonSerializer.Serialize(message, JsonOptions));
+
+    private void PostOperationResult(string? keyId, string message, bool success) =>
+        PostMessage(new { action = "operationResult", keyId, message, success });
+
     private void OnClosed(object? sender, EventArgs e)
     {
         _hotkeys.Dispose();
@@ -188,5 +350,6 @@ public partial class MainWindow : Window
         public ChainOscSettings? Settings { get; set; }
         public string? KeyId { get; set; }
         public bool Pressed { get; set; }
+        public string? PresetJson { get; set; }
     }
 }
