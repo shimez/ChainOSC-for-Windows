@@ -4,7 +4,7 @@ public enum KeyMode { PressRelease = 0, Sequence = 1 }
 
 public sealed class ChainOscSettings
 {
-    public string Version { get; set; } = "0.5.0";
+    public string Version { get; set; } = "0.6.0";
     public bool StartWithWindows { get; set; }
     public bool StartMinimized { get; set; } = true;
     public string Host { get; set; } = "127.0.0.1";
@@ -46,7 +46,8 @@ public sealed class KeyConfiguration
 
     public static KeyConfiguration CreateDefault() => new();
 
-    public string HotkeyDisplay =>
-        $"{(Ctrl ? "Ctrl+" : "")}{(Alt ? "Alt+" : "")}" +
-        $"{(Shift ? "Shift+" : "")}{(Win ? "Win+" : "")}{Hotkey}";
+    public string HotkeyDisplay => string.IsNullOrWhiteSpace(Hotkey)
+        ? "Not assigned"
+        : $"{(Ctrl ? "Ctrl+" : "")}{(Alt ? "Alt+" : "")}" +
+          $"{(Shift ? "Shift+" : "")}{(Win ? "Win+" : "")}{Hotkey}";
 }

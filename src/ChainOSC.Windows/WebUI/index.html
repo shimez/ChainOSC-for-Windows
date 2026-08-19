@@ -12,8 +12,24 @@ function selectTab(card,event){card.dataset.active=event;card.querySelector('.pr
 function readMessage(row){return{address:row.querySelector('.address').value.trim(),type:row.querySelector('.type').value,value:row.querySelector('.value').value}}function readKey(card){const q=s=>card.querySelector(s);return{id:card.dataset.id,name:q('.name').value.trim(),hotkey:q('.hotkey').value,ctrl:q('.ctrl').checked,alt:q('.alt').checked,shift:q('.shift').checked,win:q('.win').checked,mode:q('.mode').value,press:[...q('.press-list').children].map(readMessage),release:[...q('.release-list').children].map(readMessage),sequence:{address:q('.seq-address').value.trim(),type:q('.seq-type').value,start:Number(q('.seq-start').value),end:Number(q('.seq-end').value),step:Number(q('.seq-step').value)}}}function readSettings(){return{version:'0.3.0',host:document.getElementById('host').value.trim(),port:Number(document.getElementById('port').value),keys:[...keys.children].map(readKey)}}function post(action,card,extra={}){window.chrome.webview.postMessage({action,settings:readSettings(),keyId:card?.dataset.id,...extra})}function saveSettings(){post('save')}
 window.chrome.webview.addEventListener('message',event=>{const data=event.data;if(data?.action==='load'){document.getElementById('host').value=data.settings.host;document.getElementById('port').value=data.settings.port;keys.replaceChildren();data.settings.keys.forEach(addKey)}else if(data?.action==='presetExport'){const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([data.json],{type:'application/json'}));link.download=data.fileName;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}});window.chainOscLog=(message,level='')=>{const line=document.createElement('div');line.className='line '+level;line.textContent=new Date().toLocaleTimeString()+'  '+message;const log=document.getElementById('log');log.append(line);log.scrollTop=log.scrollHeight};chainOscLog('Loading saved settings...');
 </script><script>
+const supportedHotkeys=[
+  ...Array.from({length:24},(_,i)=>['F'+(i+1),'F'+(i+1)]),
+  ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(k=>[k,k]),
+  ...Array.from({length:10},(_,i)=>['D'+i,String(i)]),
+  ...Array.from({length:10},(_,i)=>['NumPad'+i,'NumPad '+i]),
+  ['Left','Left Arrow'],['Right','Right Arrow'],['Up','Up Arrow'],['Down','Down Arrow'],
+  ['Home','Home'],['End','End'],['PageUp','Page Up'],['PageDown','Page Down'],
+  ['Insert','Insert'],['Delete','Delete'],['Space','Space'],['Tab','Tab'],['Return','Enter'],
+  ['Add','NumPad +'],['Subtract','NumPad -'],['Multiply','NumPad *'],
+  ['Divide','NumPad /'],['Decimal','NumPad .'],['Capital','Caps Lock'],
+  ['Scroll','Scroll Lock'],['Pause','Pause'],['Snapshot','Print Screen'],['Apps','Menu'],
+  ['OemTilde','`'],['OemMinus','-'],['OemPlus','='],['OemOpenBrackets','['],
+  ['OemCloseBrackets',']'],['OemPipe','\\'],['OemSemicolon',';'],['OemQuotes',"'"],
+  ['OemComma',','],['OemPeriod','.'],['OemQuestion','/']
+];
+fillHotkeys=function(select){supportedHotkeys.forEach(([value,label])=>select.add(new Option(label,value)))};
 const addKeyWithNativePresetDialogs=addKey;
-document.querySelector('.version').textContent='v0.5.0 — Windows startup and single-instance operation';
+document.querySelector('.version').textContent='v0.6.0 — Recordable global hotkeys and expanded key support';
 const applicationCard=document.createElement('section');
 applicationCard.className='card';
 applicationCard.innerHTML=`<h2>Application</h2>
@@ -26,7 +42,7 @@ document.querySelector('main .card').insertAdjacentElement('beforebegin',applica
 const readSettingsV03=readSettings;
 readSettings=function(){
   const settings=readSettingsV03();
-  settings.version='0.5.0';
+  settings.version='0.6.0';
   settings.startWithWindows=document.getElementById('start-with-windows').checked;
   settings.startMinimized=document.getElementById('start-minimized').checked;
   return settings;
@@ -36,7 +52,103 @@ addKey=function(value){
   addKeyWithNativePresetDialogs(value);
   const card=keys.lastElementChild;
   card.querySelector('.import-preset').onclick=()=>post('importPreset',card);
+  installHotkeyRecorder(card);
 };
+let recordingCard=null;
+function hotkeyText(card){
+  const q=s=>card.querySelector(s),key=q('.hotkey').value;
+  if(!key)return 'Not assigned';
+  const label=q('.hotkey').selectedOptions[0]?.textContent||key;
+  return [q('.ctrl').checked&&'Ctrl',q('.alt').checked&&'Alt',
+          q('.shift').checked&&'Shift',q('.win').checked&&'Win',label]
+    .filter(Boolean).join(' + ');
+}
+function updateHotkeyDisplay(card){card.querySelector('.hotkey-display').value=hotkeyText(card)}
+function installHotkeyRecorder(card){
+  const select=card.querySelector('.hotkey'),field=select.parentElement;
+  select.hidden=true;
+  field.classList.add('full');
+  const modifierField=card.querySelector('.checks').parentElement;
+  modifierField.hidden=true;
+  const recorder=document.createElement('div');
+  recorder.innerHTML=`<div style="display:grid;grid-template-columns:1fr 170px;gap:10px">
+    <input class="hotkey-display" readonly aria-label="Current global hotkey">
+    <button class="record-hotkey test" type="button">Record Hotkey</button>
+  </div><small class="hotkey-status note">Press Backspace while recording to clear the assignment.</small>`;
+  field.append(recorder);
+  recorder.querySelector('.record-hotkey').onclick=()=>
+    recordingCard===card?stopRecording(card):startRecording(card);
+  ['ctrl','alt','shift','win'].forEach(name=>
+    card.querySelector('.'+name).onchange=()=>updateHotkeyDisplay(card));
+  updateHotkeyDisplay(card);
+}
+function setRecorderStatus(card,text,error=false){
+  const status=card.querySelector('.hotkey-status');
+  status.textContent=text;status.style.color=error?'#d92d20':'';
+}
+function startRecording(card){
+  if(recordingCard)stopRecording(recordingCard);
+  recordingCard=card;
+  card.querySelector('.record-hotkey').textContent='Cancel';
+  card.querySelector('.hotkey-display').value='Press a key combination...';
+  setRecorderStatus(card,'Escape: cancel · Backspace: clear');
+  post('recordingStarted',card);
+}
+function stopRecording(card,keepMessage=false){
+  if(recordingCard!==card)return;
+  recordingCard=null;
+  card.querySelector('.record-hotkey').textContent='Record Hotkey';
+  updateHotkeyDisplay(card);
+  if(!keepMessage)setRecorderStatus(card,'Press Backspace while recording to clear the assignment.');
+  post('recordingStopped',card);
+}
+function keyFromCode(code){
+  if(/^Key[A-Z]$/.test(code))return code.slice(3);
+  if(/^Digit[0-9]$/.test(code))return 'D'+code.slice(5);
+  if(/^F([1-9]|1[0-9]|2[0-4])$/.test(code))return code;
+  if(/^Numpad[0-9]$/.test(code))return code;
+  return {ArrowLeft:'Left',ArrowRight:'Right',ArrowUp:'Up',ArrowDown:'Down',
+    Home:'Home',End:'End',PageUp:'PageUp',PageDown:'PageDown',Insert:'Insert',Delete:'Delete',
+    Space:'Space',Tab:'Tab',Enter:'Return',NumpadEnter:'Return',NumpadAdd:'Add',
+    NumpadSubtract:'Subtract',NumpadMultiply:'Multiply',NumpadDivide:'Divide',
+    NumpadDecimal:'Decimal',CapsLock:'Capital',ScrollLock:'Scroll',Pause:'Pause',
+    PrintScreen:'Snapshot',ContextMenu:'Apps',Backquote:'OemTilde',Minus:'OemMinus',
+    Equal:'OemPlus',BracketLeft:'OemOpenBrackets',BracketRight:'OemCloseBrackets',
+    Backslash:'OemPipe',Semicolon:'OemSemicolon',Quote:'OemQuotes',Comma:'OemComma',
+    Period:'OemPeriod',Slash:'OemQuestion'}[code]||null;
+}
+function isReservedHotkey(key,ctrl,alt,shift,win){
+  return ctrl&&alt&&key==='Delete'||alt&&key==='Tab'||alt&&key==='F4'||win&&key==='L';
+}
+document.addEventListener('keydown',event=>{
+  if(!recordingCard)return;
+  event.preventDefault();event.stopImmediatePropagation();
+  const card=recordingCard;
+  if(event.code==='Escape'){stopRecording(card);return}
+  if(event.code==='Backspace'&&!event.ctrlKey&&!event.altKey&&!event.shiftKey&&!event.metaKey){
+    card.querySelector('.hotkey').value='';
+    ['ctrl','alt','shift','win'].forEach(name=>card.querySelector('.'+name).checked=false);
+    setRecorderStatus(card,'Hotkey assignment cleared.');stopRecording(card,true);return;
+  }
+  if(['ControlLeft','ControlRight','AltLeft','AltRight','ShiftLeft','ShiftRight','MetaLeft','MetaRight'].includes(event.code))return;
+  const key=keyFromCode(event.code),ctrl=event.ctrlKey,alt=event.altKey,
+        shift=event.shiftKey,win=event.metaKey;
+  if(!key){setRecorderStatus(card,'This key is not supported.',true);return}
+  if(isReservedHotkey(key,ctrl,alt,shift,win)){
+    setRecorderStatus(card,'This shortcut is reserved by Windows.',true);return;
+  }
+  const signature=[ctrl,alt,shift,win,key].join(':');
+  const duplicate=[...keys.children].some(other=>other!==card&&[
+    other.querySelector('.ctrl').checked,other.querySelector('.alt').checked,
+    other.querySelector('.shift').checked,other.querySelector('.win').checked,
+    other.querySelector('.hotkey').value].join(':')===signature);
+  if(duplicate){setRecorderStatus(card,'This hotkey is already assigned to another Key.',true);return}
+  card.querySelector('.hotkey').value=key;
+  card.querySelector('.ctrl').checked=ctrl;card.querySelector('.alt').checked=alt;
+  card.querySelector('.shift').checked=shift;card.querySelector('.win').checked=win;
+  setRecorderStatus(card,'Hotkey recorded.');stopRecording(card,true);
+},true);
+window.addEventListener('blur',()=>{if(recordingCard)stopRecording(recordingCard)});
 window.chrome.webview.addEventListener('message',event=>{
   const data=event.data;
   if(data?.action==='load'){

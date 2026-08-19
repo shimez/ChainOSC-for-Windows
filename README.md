@@ -2,10 +2,19 @@
 
 ChainOSC for Windows sends OSC messages from configurable global hotkeys.
 
-## v0.5.0
+## v0.6.0
 
-This milestone adds Windows startup and single-instance management while
-retaining the system tray and ChainOSC-compatible Key behavior.
+This milestone adds recordable global hotkeys and expanded key support while
+retaining Windows startup, system tray, and ChainOSC-compatible Key behavior.
+
+- Record a hotkey by pressing the desired key combination
+- Supports `Ctrl`, `Alt`, `Shift`, and Windows-key modifiers
+- Adds numbers, arrows, navigation keys, numpad keys, Space, Tab, Enter,
+  punctuation, and other common Windows keys
+- Escape cancels recording and Backspace clears the assignment
+- Duplicate assignments are reported immediately while recording
+- Reserved Windows shortcuts are rejected
+- OSC sending is temporarily suspended while recording a hotkey
 
 - Optional automatic startup when the current user signs in to Windows
 - Optional tray-only startup when launched automatically

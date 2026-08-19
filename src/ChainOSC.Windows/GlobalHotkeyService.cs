@@ -21,6 +21,7 @@ public sealed class GlobalHotkeyService : IDisposable
     private readonly object _sync = new();
     private List<BindingState> _bindings = [];
     private IntPtr _hook;
+    public bool Suspended { get; set; }
 
     public event EventHandler<HotkeyEventArgs>? HotkeyChanged;
 
@@ -44,7 +45,7 @@ public sealed class GlobalHotkeyService : IDisposable
     private IntPtr HookCallback(int code, IntPtr wParam, IntPtr lParam)
     {
         HotkeyEventArgs? eventArgs = null;
-        if (code >= 0)
+        if (code >= 0 && !Suspended)
         {
             var data = Marshal.PtrToStructure<KbdLlHookStruct>(lParam);
             var message = wParam.ToInt32();

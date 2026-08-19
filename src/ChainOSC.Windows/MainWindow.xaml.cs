@@ -95,10 +95,18 @@ public partial class MainWindow : Window
             var request = JsonSerializer.Deserialize<UiRequest>(e.WebMessageAsJson,
                                                                  JsonOptions);
             if (request is null) return;
-            if (request.Action == "save" && request.Settings is not null)
+            if (request.Action == "recordingStarted")
+            {
+                _hotkeys.Suspended = true;
+            }
+            else if (request.Action == "recordingStopped")
+            {
+                _hotkeys.Suspended = false;
+            }
+            else if (request.Action == "save" && request.Settings is not null)
             {
                 Validate(request.Settings);
-                request.Settings.Version = "0.5.0";
+                request.Settings.Version = "0.6.0";
                 ConfigureHotkeys(request.Settings);
                 StartupManager.SetEnabled(request.Settings.StartWithWindows);
                 SettingsStore.Save(request.Settings);
@@ -153,7 +161,7 @@ public partial class MainWindow : Window
                 // A device preset contains only Key behavior. Hotkey conflicts and
                 // other application-wide settings are checked by Save All Settings.
                 ValidateKey(key);
-                request.Settings.Version = "0.5.0";
+                request.Settings.Version = "0.6.0";
                 _settings = request.Settings;
                 ResetSequences(_settings);
                 PostSettings();
@@ -247,8 +255,12 @@ public partial class MainWindow : Window
             if (string.IsNullOrWhiteSpace(key.Id) || !identities.Add(key.Id))
                 throw new InvalidOperationException("Each Key must have a unique identity.");
             ValidateKey(key);
+            if (string.IsNullOrWhiteSpace(key.Hotkey)) continue;
             if (!TryGetVirtualKey(key.Hotkey, out _))
                 throw new InvalidOperationException($"{key.Name}: unsupported hotkey.");
+            if (IsReservedHotkey(key))
+                throw new InvalidOperationException(
+                    $"{key.Name}: {key.HotkeyDisplay} is reserved by Windows.");
             var signature = $"{key.Ctrl}:{key.Alt}:{key.Shift}:{key.Win}:{key.Hotkey}";
             if (!hotkeys.Add(signature))
                 throw new InvalidOperationException($"Duplicate hotkey: {key.HotkeyDisplay}");
@@ -317,9 +329,18 @@ public partial class MainWindow : Window
     private void ConfigureHotkeys(ChainOscSettings settings)
     {
         Validate(settings);
-        _hotkeys.Configure(settings.Keys.Select(key => new HotkeyBinding(
+        _hotkeys.Configure(settings.Keys
+            .Where(key => !string.IsNullOrWhiteSpace(key.Hotkey))
+            .Select(key => new HotkeyBinding(
             key.Id, GetVirtualKey(key.Hotkey), key.Ctrl, key.Alt, key.Shift, key.Win)));
     }
+
+    private static bool IsReservedHotkey(KeyConfiguration key) =>
+        key.Ctrl && key.Alt && key.Hotkey.Equals("Delete",
+            StringComparison.OrdinalIgnoreCase) ||
+        key.Alt && key.Hotkey.Equals("Tab", StringComparison.OrdinalIgnoreCase) ||
+        key.Alt && key.Hotkey.Equals("F4", StringComparison.OrdinalIgnoreCase) ||
+        key.Win && key.Hotkey.Equals("L", StringComparison.OrdinalIgnoreCase);
 
     private static int GetVirtualKey(string text)
     {
