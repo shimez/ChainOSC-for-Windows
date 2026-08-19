@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ChainOSC.Core/ChainOSC.Core.csproj" />
+    <Project Path="src/ChainOSC.Windows/ChainOSC.Windows.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ChainOSC.Core.Tests/ChainOSC.Core.Tests.csproj" />
+  </Folder>
+</Solution>
