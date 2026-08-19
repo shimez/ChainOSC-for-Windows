@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ChainOSC for Windows</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+    <script type="module" src="/src/main.ts" defer></script>
+  </head>
+  <body>
+    <main>
+      <h1>ChainOSC for Windows</h1>
+      <p class="version">Tauri prototype v0.1.0</p>
+
+      <section class="card">
+        <h2>OSC Target</h2>
+        <div class="grid two">
+          <div><label for="host">Host or IP address</label><input id="host" /></div>
+          <div><label for="port">UDP Port</label><input id="port" type="number" min="1" max="65535" /></div>
+        </div>
+      </section>
+
+      <section class="card key-card">
+        <h2>Key 1</h2>
+        <div class="grid two">
+          <div>
+            <label for="hotkey">Global Hotkey</label>
+            <input id="hotkey" placeholder="Example: Ctrl+Shift+F8" />
+            <small>Use Tauri shortcut notation, such as F8, Ctrl+F8, or Alt+Shift+A.</small>
+          </div>
+          <div>
+            <label for="address">OSC Address</label>
+            <input id="address" maxlength="192" />
+          </div>
+          <div>
+            <label for="value-type">OSC Type</label>
+            <select id="value-type">
+              <option value="int">Int</option>
+              <option value="float">Float</option>
+              <option value="string">String</option>
+            </select>
+          </div>
+          <div></div>
+          <div><label for="press-value">Press Value</label><input id="press-value" maxlength="128" /></div>
+          <div><label for="release-value">Release Value</label><input id="release-value" maxlength="128" /></div>
+        </div>
+        <div class="actions">
+          <button id="test-press" class="secondary" type="button">Test Press</button>
+          <button id="test-release" class="secondary" type="button">Test Release</button>
+        </div>
+      </section>
+
+      <div class="save-bar"><button id="save" class="primary" type="button">Save Settings</button></div>
+
+      <section class="card">
+        <h2>Activity</h2>
+        <div id="status" class="status">Loading settings...</div>
+        <div id="log" aria-live="polite"></div>
+      </section>
+    </main>
+  </body>
+</html>
