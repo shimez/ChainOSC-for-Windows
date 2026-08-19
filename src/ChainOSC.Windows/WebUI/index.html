@@ -13,9 +13,24 @@ function readMessage(row){return{address:row.querySelector('.address').value.tri
 window.chrome.webview.addEventListener('message',event=>{const data=event.data;if(data?.action==='load'){document.getElementById('host').value=data.settings.host;document.getElementById('port').value=data.settings.port;keys.replaceChildren();data.settings.keys.forEach(addKey)}else if(data?.action==='presetExport'){const link=document.createElement('a');link.href=URL.createObjectURL(new Blob([data.json],{type:'application/json'}));link.download=data.fileName;link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}});window.chainOscLog=(message,level='')=>{const line=document.createElement('div');line.className='line '+level;line.textContent=new Date().toLocaleTimeString()+'  '+message;const log=document.getElementById('log');log.append(line);log.scrollTop=log.scrollHeight};chainOscLog('Loading saved settings...');
 </script><script>
 const addKeyWithNativePresetDialogs=addKey;
-document.querySelector('.version').textContent='v0.4.0 — System tray operation and ChainOSC-compatible Key presets';
+document.querySelector('.version').textContent='v0.5.0 — Windows startup and single-instance operation';
+const applicationCard=document.createElement('section');
+applicationCard.className='card';
+applicationCard.innerHTML=`<h2>Application</h2>
+  <div class="checks" style="display:grid;gap:12px">
+    <label><input id="start-with-windows" type="checkbox">Start ChainOSC when I sign in to Windows</label>
+    <label><input id="start-minimized" type="checkbox">Start minimized to the system tray when launched at sign-in</label>
+  </div>
+  <p class="note">Starting with Windows is registered for the current user and does not require administrator rights.</p>`;
+document.querySelector('main .card').insertAdjacentElement('beforebegin',applicationCard);
 const readSettingsV03=readSettings;
-readSettings=function(){const settings=readSettingsV03();settings.version='0.4.0';return settings;};
+readSettings=function(){
+  const settings=readSettingsV03();
+  settings.version='0.5.0';
+  settings.startWithWindows=document.getElementById('start-with-windows').checked;
+  settings.startMinimized=document.getElementById('start-minimized').checked;
+  return settings;
+};
 keys.insertAdjacentElement('afterend',document.querySelector('.toolbar'));
 addKey=function(value){
   addKeyWithNativePresetDialogs(value);
@@ -24,6 +39,10 @@ addKey=function(value){
 };
 window.chrome.webview.addEventListener('message',event=>{
   const data=event.data;
+  if(data?.action==='load'){
+    document.getElementById('start-with-windows').checked=!!data.settings.startWithWindows;
+    document.getElementById('start-minimized').checked=data.settings.startMinimized!==false;
+  }
   if(data?.action!=='operationResult')return;
   chainOscLog(data.message,data.success?'ok':'error');
   if(!data.success)alert('Preset operation failed\n\n'+data.message);

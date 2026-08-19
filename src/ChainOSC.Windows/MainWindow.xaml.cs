@@ -58,6 +58,8 @@ public partial class MainWindow : Window
                 "chainosc.local", Path.Combine(AppContext.BaseDirectory, "WebUI"),
                 CoreWebView2HostResourceAccessKind.DenyCors);
             Browser.Source = new Uri("https://chainosc.local/index.html");
+            if (App.StartedByWindows && _settings.StartMinimized)
+                HideToTray(showNotice: false);
         }
         catch (Exception ex)
         {
@@ -96,8 +98,9 @@ public partial class MainWindow : Window
             if (request.Action == "save" && request.Settings is not null)
             {
                 Validate(request.Settings);
-                request.Settings.Version = "0.4.0";
+                request.Settings.Version = "0.5.0";
                 ConfigureHotkeys(request.Settings);
+                StartupManager.SetEnabled(request.Settings.StartWithWindows);
                 SettingsStore.Save(request.Settings);
                 _settings = request.Settings;
                 ResetSequences(_settings);
@@ -150,7 +153,7 @@ public partial class MainWindow : Window
                 // A device preset contains only Key behavior. Hotkey conflicts and
                 // other application-wide settings are checked by Save All Settings.
                 ValidateKey(key);
-                request.Settings.Version = "0.4.0";
+                request.Settings.Version = "0.5.0";
                 _settings = request.Settings;
                 ResetSequences(_settings);
                 PostSettings();
@@ -380,11 +383,11 @@ public partial class MainWindow : Window
         HideToTray();
     }
 
-    private void HideToTray()
+    private void HideToTray(bool showNotice = true)
     {
         ShowInTaskbar = false;
         Hide();
-        if (_trayNoticeShown) return;
+        if (!showNotice || _trayNoticeShown) return;
         _trayNoticeShown = true;
         _trayIcon.BalloonTipTitle = "ChainOSC is still running";
         _trayIcon.BalloonTipText =
@@ -398,6 +401,14 @@ public partial class MainWindow : Window
         Show();
         WindowState = WindowState.Normal;
         Activate();
+    }
+
+    internal void ShowFromExternalLaunch()
+    {
+        ShowFromTray();
+        Topmost = true;
+        Topmost = false;
+        Focus();
     }
 
     private void ExitFromTray()

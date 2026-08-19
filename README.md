@@ -2,10 +2,16 @@
 
 ChainOSC for Windows sends OSC messages from configurable global hotkeys.
 
-## v0.4.0
+## v0.5.0
 
-This milestone adds system tray operation for daily use and retains the
-ChainOSC-compatible Key behavior introduced in v0.3.0.
+This milestone adds Windows startup and single-instance management while
+retaining the system tray and ChainOSC-compatible Key behavior.
+
+- Optional automatic startup when the current user signs in to Windows
+- Optional tray-only startup when launched automatically
+- No administrator rights required for startup registration
+- Prevent multiple ChainOSC processes from running simultaneously
+- Running the executable again opens the existing settings window
 
 - Closing or minimizing the settings window keeps ChainOSC running in the tray
 - Double-click the tray icon to reopen the settings window

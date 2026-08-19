@@ -4,7 +4,9 @@ public enum KeyMode { PressRelease = 0, Sequence = 1 }
 
 public sealed class ChainOscSettings
 {
-    public string Version { get; set; } = "0.4.0";
+    public string Version { get; set; } = "0.5.0";
+    public bool StartWithWindows { get; set; }
+    public bool StartMinimized { get; set; } = true;
     public string Host { get; set; } = "127.0.0.1";
     public int Port { get; set; } = 9000;
     public List<KeyConfiguration> Keys { get; set; } = [KeyConfiguration.CreateDefault()];
