@@ -2,10 +2,16 @@
 
 ChainOSC for Windows sends OSC messages from configurable global hotkeys.
 
-## v0.6.0
+## Documentation
 
-This milestone adds recordable global hotkeys and expanded key support while
-retaining Windows startup, system tray, and ChainOSC-compatible Key behavior.
+- [日本語ユーザーガイド](docs/USER_GUIDE_ja.md)
+- [M5ChainOSC Key Presets](https://github.com/shimez/M5ChainOSC/tree/main/presets/key)
+
+## v0.7.0
+
+This milestone provides English and Japanese UI, Key action menus, recordable
+global hotkeys, Windows startup, system tray operation, and
+ChainOSC-compatible Key presets.
 
 - Record a hotkey by pressing the desired key combination
 - Supports `Ctrl`, `Alt`, `Shift`, and Windows-key modifiers
@@ -47,30 +53,41 @@ are intentionally not included in shared device presets.
 ## Run
 
 ```powershell
-dotnet restore
-dotnet build "ChainOSC.slnx"
-dotnet run --project "src\ChainOSC.Windows\ChainOSC.Windows.csproj"
+cd tauri
+npm install
+npm run tauri dev
 ```
 
 To verify OSC without another application, start the included receiver in a
 second terminal, leave the target at `127.0.0.1:9000`, and press the hotkey:
 
 ```powershell
-python "scripts\osc_receiver.py"
+python "..\scripts\osc_receiver.py"
 ```
 
 ## Publish for another Windows PC
 
-The ordinary build output is not a single portable executable. To copy the app
-to another 64-bit Windows PC, publish the complete folder:
+Create a release build from the Tauri directory:
 
 ```powershell
-dotnet publish "src\ChainOSC.Windows\ChainOSC.Windows.csproj" `
-  -c Release -r win-x64 --self-contained true `
-  -p:PublishSingleFile=true `
-  -o ".\publish\win-x64"
+npm run tauri build
 ```
 
-Copy the complete `publish\win-x64` folder to the other PC and start
-`ChainOSC.Windows.exe`. The Microsoft Edge WebView2 Runtime is also required;
-it is included with current Windows 10/11 installations in most environments.
+The portable executable is generated under
+`tauri\src-tauri\target\release\chainosc-for-windows.exe`. Installer packages
+are generated under `tauri\src-tauri\target\release\bundle`.
+
+The Microsoft Edge WebView2 Runtime is required. It is included with current
+Windows 10/11 installations in most environments.
+
+Include `LICENSE`, `THIRD_PARTY_NOTICES.md`, and the complete `licenses`
+directory with every distributed binary package.
+
+## License
+
+ChainOSC for Windows is licensed under the [MIT License](LICENSE).
+
+Distributed binaries include third-party open-source software. Copyright,
+license, and source-availability information for those components is provided
+in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). These files and the
+`licenses` directory should be included with every binary distribution.
