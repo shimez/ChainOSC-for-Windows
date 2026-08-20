@@ -1,28 +1,33 @@
-name: Release ChainOSC for Windows
+name: Build and draft release
 
 on:
+  workflow_dispatch:
   push:
     tags:
       - "v*.*.*"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  build-and-release:
-    name: Build Windows portable release
+  build:
+    name: Build Windows portable package
     runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      zip_name: ${{ steps.version.outputs.zip_name }}
+      checksum_name: ${{ steps.version.outputs.checksum_name }}
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: "24"
           cache: npm
@@ -34,15 +39,12 @@ jobs:
           targets: x86_64-pc-windows-msvc
 
       - name: Validate release version
+        id: version
         shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
         run: |
           $ErrorActionPreference = "Stop"
-          $tag = "${{ github.ref_name }}"
-          if ($tag -notmatch '^v(?<version>\d+\.\d+\.\d+)$') {
-            throw "Release tag must use the vX.Y.Z format: $tag"
-          }
-
-          $expected = $Matches.version
           $npmVersion = (Get-Content "tauri/package.json" -Raw | ConvertFrom-Json).version
           $tauriVersion = (Get-Content "tauri/src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json).version
           $cargoText = Get-Content "tauri/src-tauri/Cargo.toml" -Raw
@@ -51,18 +53,29 @@ jobs:
           }
           $cargoVersion = $Matches.version
 
+          $expected = $npmVersion
+          if ($env:RELEASE_TAG) {
+            if ($env:RELEASE_TAG -notmatch '^v(?<version>\d+\.\d+\.\d+)$') {
+              throw "Release tag must use the vX.Y.Z format: $env:RELEASE_TAG"
+            }
+            $expected = $Matches.version
+          }
+
           $versions = [ordered]@{
             "tauri/package.json" = $npmVersion
             "tauri/src-tauri/Cargo.toml" = $cargoVersion
             "tauri/src-tauri/tauri.conf.json" = $tauriVersion
           }
-
           foreach ($entry in $versions.GetEnumerator()) {
             if ($entry.Value -ne $expected) {
-              throw "$($entry.Key) version $($entry.Value) does not match tag $tag."
+              throw "$($entry.Key) version $($entry.Value) does not match expected version $expected."
             }
           }
 
+          $zipName = "ChainOSC-for-Windows-v$expected-win-x64-portable.zip"
+          "version=$expected" >> $env:GITHUB_OUTPUT
+          "zip_name=$zipName" >> $env:GITHUB_OUTPUT
+          "checksum_name=$zipName.sha256" >> $env:GITHUB_OUTPUT
           "Release version validated: $expected"
 
       - name: Install frontend dependencies
@@ -74,18 +87,17 @@ jobs:
         run: npm run tauri build -- --no-bundle --target x86_64-pc-windows-msvc
 
       - name: Create portable ZIP
-        id: package
         shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+          ZIP_NAME: ${{ steps.version.outputs.zip_name }}
+          CHECKSUM_NAME: ${{ steps.version.outputs.checksum_name }}
         run: |
           $ErrorActionPreference = "Stop"
-          $tag = "${{ github.ref_name }}"
-          $folderName = "ChainOSC-for-Windows-$tag-win-x64-portable"
+          $folderName = "ChainOSC-for-Windows-v$env:RELEASE_VERSION-win-x64-portable"
           $stage = Join-Path $env:RUNNER_TEMP $folderName
-          $outputDirectory = Join-Path $PWD "release-assets"
-          $zip = Join-Path $outputDirectory "$folderName.zip"
-
           New-Item -ItemType Directory -Path $stage -Force | Out-Null
-          New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+          New-Item -ItemType Directory -Path "dist" -Force | Out-Null
 
           $executable = "tauri/src-tauri/target/x86_64-pc-windows-msvc/release/chainosc-for-windows.exe"
           if (-not (Test-Path $executable)) {
@@ -97,22 +109,53 @@ jobs:
           Copy-Item -LiteralPath "THIRD_PARTY_NOTICES.md" -Destination $stage
           Copy-Item -LiteralPath "licenses" -Destination $stage -Recurse
 
+          $zip = Join-Path $PWD "dist/$env:ZIP_NAME"
           Compress-Archive -LiteralPath $stage -DestinationPath $zip -CompressionLevel Optimal
           $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  $folderName.zip" | Set-Content -LiteralPath "$zip.sha256" -Encoding ascii
+          "$hash  $env:ZIP_NAME" | Set-Content -LiteralPath "dist/$env:CHECKSUM_NAME" -Encoding ascii
 
-          "zip=$zip" >> $env:GITHUB_OUTPUT
-          "checksum=$zip.sha256" >> $env:GITHUB_OUTPUT
-          "Created $zip"
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ChainOSC-for-Windows-${{ steps.version.outputs.version }}-win-x64
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 30
 
-      - name: Publish GitHub Release
-        shell: pwsh
+      - name: Upload release files for draft job
+        if: github.ref_type == 'tag'
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-files
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 1
+
+  draft-release:
+    name: Create draft GitHub Release
+    if: github.ref_type == 'tag'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Download release files
+        uses: actions/download-artifact@v8
+        with:
+          name: release-files
+          path: dist
+
+      - name: Create draft release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: |
-          gh release create "${{ github.ref_name }}" `
-            "${{ steps.package.outputs.zip }}" `
-            "${{ steps.package.outputs.checksum }}" `
-            --title "ChainOSC for Windows ${{ github.ref_name }}" `
-            --generate-notes `
-            --verify-tag
+          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TITLE: ChainOSC for Windows ${{ github.ref_name }}
+        run: >-
+          gh release create "$RELEASE_TAG"
+          dist/*
+          --repo "$GITHUB_REPOSITORY"
+          --verify-tag
+          --draft
+          --generate-notes
+          --title "$RELEASE_TITLE"

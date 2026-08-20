@@ -5,6 +5,7 @@ ChainOSC for Windows sends OSC messages from configurable global hotkeys.
 ## Documentation
 
 - [日本語ユーザーガイド](docs/USER_GUIDE_ja.md)
+- [変更履歴](CHANGELOG.md)
 - [M5ChainOSC Key Presets](https://github.com/shimez/M5ChainOSC/tree/main/presets/key)
 
 ## v0.7.0
