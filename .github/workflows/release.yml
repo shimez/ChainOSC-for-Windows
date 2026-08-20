@@ -1,0 +1,118 @@
+name: Release ChainOSC for Windows
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    name: Build Windows portable release
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: tauri/package-lock.json
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Validate release version
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag = "${{ github.ref_name }}"
+          if ($tag -notmatch '^v(?<version>\d+\.\d+\.\d+)$') {
+            throw "Release tag must use the vX.Y.Z format: $tag"
+          }
+
+          $expected = $Matches.version
+          $npmVersion = (Get-Content "tauri/package.json" -Raw | ConvertFrom-Json).version
+          $tauriVersion = (Get-Content "tauri/src-tauri/tauri.conf.json" -Raw | ConvertFrom-Json).version
+          $cargoText = Get-Content "tauri/src-tauri/Cargo.toml" -Raw
+          if ($cargoText -notmatch '(?m)^version\s*=\s*"(?<version>[^"]+)"') {
+            throw "Could not read the package version from Cargo.toml."
+          }
+          $cargoVersion = $Matches.version
+
+          $versions = [ordered]@{
+            "tauri/package.json" = $npmVersion
+            "tauri/src-tauri/Cargo.toml" = $cargoVersion
+            "tauri/src-tauri/tauri.conf.json" = $tauriVersion
+          }
+
+          foreach ($entry in $versions.GetEnumerator()) {
+            if ($entry.Value -ne $expected) {
+              throw "$($entry.Key) version $($entry.Value) does not match tag $tag."
+            }
+          }
+
+          "Release version validated: $expected"
+
+      - name: Install frontend dependencies
+        working-directory: tauri
+        run: npm ci
+
+      - name: Build portable executable
+        working-directory: tauri
+        run: npm run tauri build -- --no-bundle --target x86_64-pc-windows-msvc
+
+      - name: Create portable ZIP
+        id: package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $tag = "${{ github.ref_name }}"
+          $folderName = "ChainOSC-for-Windows-$tag-win-x64-portable"
+          $stage = Join-Path $env:RUNNER_TEMP $folderName
+          $outputDirectory = Join-Path $PWD "release-assets"
+          $zip = Join-Path $outputDirectory "$folderName.zip"
+
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+          New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
+
+          $executable = "tauri/src-tauri/target/x86_64-pc-windows-msvc/release/chainosc-for-windows.exe"
+          if (-not (Test-Path $executable)) {
+            throw "Built executable was not found: $executable"
+          }
+
+          Copy-Item -LiteralPath $executable -Destination $stage
+          Copy-Item -LiteralPath "LICENSE" -Destination $stage
+          Copy-Item -LiteralPath "THIRD_PARTY_NOTICES.md" -Destination $stage
+          Copy-Item -LiteralPath "licenses" -Destination $stage -Recurse
+
+          Compress-Archive -LiteralPath $stage -DestinationPath $zip -CompressionLevel Optimal
+          $hash = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $folderName.zip" | Set-Content -LiteralPath "$zip.sha256" -Encoding ascii
+
+          "zip=$zip" >> $env:GITHUB_OUTPUT
+          "checksum=$zip.sha256" >> $env:GITHUB_OUTPUT
+          "Created $zip"
+
+      - name: Publish GitHub Release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ github.ref_name }}" `
+            "${{ steps.package.outputs.zip }}" `
+            "${{ steps.package.outputs.checksum }}" `
+            --title "ChainOSC for Windows ${{ github.ref_name }}" `
+            --generate-notes `
+            --verify-tag

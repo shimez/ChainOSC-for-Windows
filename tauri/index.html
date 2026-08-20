@@ -10,39 +10,45 @@
   <body>
     <main>
       <h1>ChainOSC for Windows</h1>
-      <p class="version">Tauri prototype v0.6.0</p>
+      <p class="version">Tauri v0.7.0</p>
+
+      <section class="card language-row">
+        <h2 data-en="Language" data-ja="言語">Language</h2>
+        <select id="language"><option value="en">English</option><option value="ja">日本語</option></select>
+      </section>
 
       <section class="card system-card">
-        <h2>System</h2>
-        <div class="system-grid"><div><strong>Product</strong><span>ChainOSC for Windows</span></div><div><strong>Version</strong><span>0.6.0</span></div><div><strong>Runtime</strong><span>Tauri / WebView2</span></div></div>
+        <h2 data-en="System" data-ja="システム">System</h2>
+        <div class="system-grid"><div><strong data-en="Product" data-ja="製品名">Product</strong><span>ChainOSC for Windows</span></div><div><strong>Version</strong><span>0.7.0</span></div><div><strong>Runtime</strong><span>Tauri / WebView2</span></div></div>
       </section>
 
       <section class="card">
-        <h2>OSC Target</h2>
+        <h2 data-en="OSC Target" data-ja="OSC送信先">OSC Target</h2>
         <div class="grid two">
-          <div><label for="host">Host or IP address</label><input id="host" /></div>
-          <div><label for="port">UDP Port</label><input id="port" type="number" min="1" max="65535" /></div>
+          <div><label for="host" data-en="Host or IP address" data-ja="ホスト名またはIPアドレス">Host or IP address</label><input id="host" /></div>
+          <div><label for="port" data-en="UDP Port" data-ja="UDPポート">UDP Port</label><input id="port" type="number" min="1" max="65535" /></div>
         </div>
       </section>
 
       <section class="card">
-        <h2>Application</h2>
-        <label class="switch-row"><input id="start-with-windows" type="checkbox" /> <span><strong>Start with Windows</strong><small>Start hidden in the system tray when you sign in.</small></span></label>
+        <h2 data-en="Application" data-ja="アプリケーション">Application</h2>
+        <label class="switch-row"><input id="start-with-windows" type="checkbox" /> <span><strong data-en="Start with Windows" data-ja="Windowsへのサインイン時に起動">Start with Windows</strong><small data-en="Start hidden in the system tray when you sign in." data-ja="サインイン時は画面を表示せず、タスクトレイで起動します。">Start hidden in the system tray when you sign in.</small></span></label>
+        <p class="warning-note" data-en="Before updating or deleting the application, clear this checkbox and save all settings." data-ja="アプリをアップデートまたは削除する場合は、事前にこのチェックを外して「すべての設定を保存」を実行してください。">Before updating or deleting the application, clear this checkbox and save all settings.</p>
       </section>
 
       <section class="card">
-        <h2>Settings Backup and Restore</h2>
-        <p class="note">Export or restore OSC target, application, Key, hotkey, and message settings as versioned JSON.</p>
-        <div class="backup-actions"><button id="export-settings" class="secondary" type="button">Export Settings (JSON)</button><button id="import-settings" class="secondary" type="button">Import Settings (JSON)</button><input id="settings-file" type="file" accept=".json,application/json" hidden /></div>
+        <h2 data-en="Settings Backup and Restore" data-ja="設定のバックアップと復元">Settings Backup and Restore</h2>
+        <p class="note" data-en="Export or restore OSC target, application, Key, hotkey, and message settings as versioned JSON." data-ja="OSC送信先、アプリケーション、Key、ホットキー、メッセージの設定をバージョン付きJSONでバックアップ・復元します。">Export or restore settings as versioned JSON.</p>
+        <div class="backup-actions"><button id="export-settings" class="secondary" type="button" data-en="Export Settings (JSON)" data-ja="設定をエクスポート（JSON）">Export Settings (JSON)</button><button id="import-settings" class="secondary" type="button" data-en="Import Settings (JSON)" data-ja="設定をインポート（JSON）">Import Settings (JSON)</button><input id="settings-file" type="file" accept=".json,application/json" hidden /></div>
       </section>
 
       <div id="keys"></div>
-      <button id="add-key" class="add-key" type="button">+ Add Key</button>
+      <button id="add-key" class="add-key" type="button" data-en="+ Add Key" data-ja="＋ Keyを追加">+ Add Key</button>
 
-      <div class="save-bar"><span id="unsaved" class="unsaved" hidden>Unsaved changes</span><button id="save" class="primary" type="button">Save Settings</button></div>
+      <div class="save-bar"><span id="unsaved" class="unsaved" hidden data-en="Unsaved changes" data-ja="未保存の変更">Unsaved changes</span><button id="save" class="primary" type="button" data-en="Save All Settings" data-ja="すべての設定を保存">Save All Settings</button></div>
 
       <section class="card">
-        <h2>Activity</h2>
+        <h2 data-en="Activity" data-ja="動作履歴">Activity</h2>
         <div id="status" class="status">Loading settings...</div>
         <div id="log" aria-live="polite"></div>
       </section>

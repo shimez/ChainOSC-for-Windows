@@ -1,8 +1,8 @@
 # ChainOSC for Windows — Tauri prototype
 
-## v0.6.0
+## v0.7.0
 
-This version improves backup, migration, and distribution readiness:
+This version aligns the interface with the ChainOSC device projects:
 
 - add and delete any number of Keys;
 - a name and independent global hotkey for every Key;
@@ -30,6 +30,9 @@ This version improves backup, migration, and distribution readiness:
 - an unsaved-changes indicator;
 - product, version, and runtime information in the UI;
 - a custom ChainOSC application icon for executables, installers, windows, and the tray.
+- English and Japanese UI with a persistent language selector;
+- Key actions consolidated into an ellipsis menu;
+- terminology aligned with M5ChainOSC and ChainOSCmini.
 - test buttons and an activity log.
 
 The `.NET 10` implementation in the repository root remains the reference
@@ -45,3 +48,9 @@ npm run tauri dev
 
 Exit the `.NET` ChainOSC prototype before testing, because both applications
 cannot register the same global hotkey simultaneously.
+
+## License
+
+ChainOSC for Windows is licensed under the [MIT License](../LICENSE).
+Third-party notices and source-availability information are provided in
+[THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md).

@@ -1,8 +1,9 @@
 [package]
 name = "chainosc-for-windows"
-version = "0.6.0"
+version = "0.7.0"
 description = "Lightweight OSC sender controlled by global hotkeys"
 authors = ["shimez"]
+license = "MIT"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
