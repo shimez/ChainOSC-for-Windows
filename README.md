@@ -8,9 +8,17 @@ ChainOSC for Windows sends OSC messages from configurable global hotkeys.
 - [変更履歴](CHANGELOG.md)
 - [M5ChainOSC Key Presets](https://github.com/shimez/M5ChainOSC/tree/main/presets/key)
 
-## v0.7.0
+## Repository structure
 
-This milestone provides English and Japanese UI, Key action menus, recordable
+- [`tauri/`](tauri/) — Current supported implementation and the source of official releases
+- [`legacy/dotnet-prototype/`](legacy/dotnet-prototype/) — Archived .NET/WPF prototype retained for reference
+
+The .NET prototype is no longer the primary implementation. New development,
+support, and releases are based on the Tauri implementation.
+
+## v1.0.0
+
+The first stable release provides English and Japanese UI, Key action menus, recordable
 global hotkeys, Windows startup, system tray operation, and
 ChainOSC-compatible Key presets.
 

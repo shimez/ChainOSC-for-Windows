@@ -4,7 +4,7 @@ ChainOSC for Windows is distributed under the MIT License. It includes or is
 built with third-party software. Copyright in third-party software remains
 with its respective owners.
 
-This notice was prepared for ChainOSC for Windows v0.7.0 from the locked
+This notice was prepared for ChainOSC for Windows v1.0.0 from the locked
 dependencies in `tauri/package-lock.json` and `tauri/src-tauri/Cargo.lock` for
 the `x86_64-pc-windows-msvc` target.
 

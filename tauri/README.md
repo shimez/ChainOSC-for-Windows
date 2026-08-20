@@ -1,8 +1,8 @@
-# ChainOSC for Windows — Tauri prototype
+# ChainOSC for Windows — Tauri
 
-## v0.7.0
+## v1.0.0
 
-This version aligns the interface with the ChainOSC device projects:
+This stable release aligns the interface with the ChainOSC device projects:
 
 - add and delete any number of Keys;
 - a name and independent global hotkey for every Key;
@@ -35,8 +35,8 @@ This version aligns the interface with the ChainOSC device projects:
 - terminology aligned with M5ChainOSC and ChainOSCmini.
 - test buttons and an activity log.
 
-The `.NET 10` implementation in the repository root remains the reference
-implementation while the Tauri version is developed.
+This directory contains the current supported implementation. Official
+ChainOSC for Windows releases are built from this Tauri project.
 
 ## Run
 
@@ -45,9 +45,6 @@ cd tauri
 npm install
 npm run tauri dev
 ```
-
-Exit the `.NET` ChainOSC prototype before testing, because both applications
-cannot register the same global hotkey simultaneously.
 
 ## License
 

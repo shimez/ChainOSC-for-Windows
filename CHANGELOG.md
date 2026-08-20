@@ -6,6 +6,14 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-21
+
+### Changed
+
+- ChainOSC for Windowsの最初の安定版として正式リリース
+- アプリ、設定バックアップ、配布物のバージョン表記を`1.0.0`へ統一
+- 現行のTauri版と旧.NET/WPFプロトタイプを明確にするため、旧実装を`legacy/dotnet-prototype/`へ移動
+
 ## [0.7.0]
 
 ### Added
@@ -84,7 +92,8 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 - Int、Float、String形式のOSCメッセージに対応
 - 押した時／離した時のテスト送信と動作履歴を追加
 
-[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.0.0
 [0.7.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v0.7.0
 [0.6.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v0.6.0
 [0.5.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v0.5.0
