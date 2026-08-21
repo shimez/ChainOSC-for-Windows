@@ -6,6 +6,12 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 
 ## [Unreleased]
 
+### Added
+
+- GitHub Pages用のドキュメントポータルを追加
+- 日本語／英語のクイックスタートガイドを追加
+- 日本語／英語のユーザーガイドと最新Releaseへの導線を追加
+
 ## [1.0.0] - 2026-08-21
 
 ### Changed

@@ -1,4 +1,12 @@
+---
+layout: default
+title: ChainOSC for Windows 日本語ユーザーガイド
+permalink: /user-guide/
+---
+
 # ChainOSC for Windows ユーザーガイド
+
+[English version](../en/user-guide/)
 
 ChainOSC for Windowsは、Windowsのグローバルホットキーを押した時／離した時に、指定したOSCメッセージを送信するアプリです。アプリをタスクトレイへ格納した状態でも動作します。
 
@@ -223,5 +231,5 @@ reg delete "HKCU\Software\Microsoft\Windows\CurrentVersion\Run" /v "ChainOSCForW
 
 ChainOSC for WindowsはMITライセンスで公開されています。
 
-- [MIT License](../LICENSE)
-- [Third-Party Software Notices](../THIRD_PARTY_NOTICES.md)
+- [MIT License](https://github.com/shimez/ChainOSC-for-Windows/blob/main/LICENSE)
+- [Third-Party Software Notices](https://github.com/shimez/ChainOSC-for-Windows/blob/main/THIRD_PARTY_NOTICES.md)

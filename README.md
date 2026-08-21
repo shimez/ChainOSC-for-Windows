@@ -4,7 +4,12 @@ ChainOSC for Windows sends OSC messages from configurable global hotkeys.
 
 ## Documentation
 
-- [日本語ユーザーガイド](docs/USER_GUIDE_ja.md)
+- [Documentation Portal](https://shimez.github.io/ChainOSC-for-Windows/)
+- [日本語クイックスタート](https://shimez.github.io/ChainOSC-for-Windows/quick-start/)
+- [English Quick Start](https://shimez.github.io/ChainOSC-for-Windows/en/quick-start/)
+- [日本語ユーザーガイド](https://shimez.github.io/ChainOSC-for-Windows/user-guide/)
+- [English User Guide](https://shimez.github.io/ChainOSC-for-Windows/en/user-guide/)
+- [Latest Release](https://github.com/shimez/ChainOSC-for-Windows/releases/latest)
 - [変更履歴](CHANGELOG.md)
 - [M5ChainOSC Key Presets](https://github.com/shimez/M5ChainOSC/tree/main/presets/key)
 
