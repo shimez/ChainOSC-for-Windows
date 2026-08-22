@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#10284a"/><stop offset="1" stop-color="#080b14"/></linearGradient><radialGradient id="glow"><stop stop-color="#5fa1ff" stop-opacity=".42"/><stop offset="1" stop-color="#5fa1ff" stop-opacity="0"/></radialGradient></defs>
+  <rect width="1200" height="630" fill="url(#bg)"/><circle cx="980" cy="80" r="390" fill="url(#glow)"/>
+  <rect x="62" y="62" width="1076" height="506" rx="34" fill="#101827" fill-opacity=".82" stroke="#304d77"/><rect x="62" y="62" width="1076" height="7" rx="4" fill="#5fa1ff"/>
+  <!-- ChainOSC double-link mark -->
+  <g transform="translate(92 110)" fill="none" stroke="#5fa1ff" stroke-width="14">
+    <rect x="0" y="18" width="92" height="56" rx="28" transform="rotate(-18 46 46)"/>
+    <rect x="62" y="18" width="92" height="56" rx="28" transform="rotate(18 108 46)"/>
+  </g>
+  <text x="92" y="265" fill="#f8fafc" font-family="Segoe UI, Arial, sans-serif" font-size="76" font-weight="750" letter-spacing="-3">ChainOSC for Windows</text>
+  <text x="96" y="326" fill="#a9ceff" font-family="Segoe UI, Arial, sans-serif" font-size="28" font-weight="650" letter-spacing="4">GLOBAL HOTKEYS TO OSC</text>
+  <text x="96" y="405" fill="#dce4f1" font-family="Segoe UI, Arial, sans-serif" font-size="31">Portable Windows app · No installation required</text>
+  <g transform="translate(860 337)" fill="none" stroke="#5fa1ff" stroke-width="5"><rect width="205" height="125" rx="18" fill="#141f32"/><path d="M38 36h42v25H38zM88 36h42v25H88zM138 36h29v25h-29zM38 70h29v25H38zM76 70h91v25H76z" fill="#5fa1ff" fill-opacity=".18"/></g>
+  <text x="1105" y="538" text-anchor="end" fill="#818da2" font-family="Segoe UI, Arial, sans-serif" font-size="19">shimez.github.io/ChainOSC-for-Windows</text>
+</svg>
