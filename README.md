@@ -49,7 +49,7 @@ ChainOSC-compatible Key presets.
 - Global hotkeys and OSC transmission remain active while the window is hidden
 
 - Add and delete any number of Key configurations
-- Configurable key (`F1`–`F12` or `A`–`Z`) and modifiers
+- Common Windows keys and modifier combinations
 - Press / Release or Sequence mode
 - Up to 8 Press + Release OSC messages per Key
 - Add, delete, reorder, or leave either event with zero messages
@@ -60,7 +60,7 @@ ChainOSC-compatible Key presets.
 - Duplicate hotkey validation
 - Automatic restoration from the application's WebView2 local storage
 - Import and export compatible `ChainOSC-device-preset` Key JSON files
-- Automatic migration of v0.2.0 settings
+- Automatic migration of settings from earlier Tauri versions
 
 Windows-only fields such as the global hotkey, local Key name, and internal ID
 are intentionally not included in shared device presets.

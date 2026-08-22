@@ -10,7 +10,7 @@ This stable release aligns the interface with the ChainOSC device projects:
 - Int, Float, and String OSC values;
 - configurable OSC host, UDP port, and address;
 - persistent settings using the application WebView's local storage;
-- automatic migration of the v0.1.0 Key configuration;
+- automatic migration of settings from earlier Tauri versions;
 - duplicate global-hotkey validation;
 - up to eight Press and Release OSC messages per Key;
 - message addition, deletion, and ordering;
