@@ -6,11 +6,19 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-08-22
+
 ### Added
 
 - GitHub Pages用のドキュメントポータルを追加
 - 日本語／英語のクイックスタートガイドを追加
 - 日本語／英語のユーザーガイドと最新Releaseへの導線を追加
+- XなどのSNSで共有するためのプレビューカードを追加
+
+### Changed
+
+- アプリとSNSプレビューカードのアイコンを二連リングのデザインへ統一
+- アプリ、設定バックアップ、配布物のバージョン表記を`1.0.1`へ更新
 
 ## [1.0.0] - 2026-08-21
 
@@ -98,7 +106,8 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 - Int、Float、String形式のOSCメッセージに対応
 - 押した時／離した時のテスト送信と動作履歴を追加
 
-[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.0.1
 [1.0.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.0.0
 [0.7.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v0.7.0
 [0.6.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v0.6.0
