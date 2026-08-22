@@ -69,6 +69,14 @@ Enable Start with Windows to launch ChainOSC automatically when the current user
 > [!IMPORTANT]
 > Before updating or removing ChainOSC for Windows, disable Start with Windows and select Save All Settings. If the old executable is moved or deleted first, its old path remains in the Windows startup configuration.
 
+In the current Tauri version, settings saved with Save All Settings and the selected UI language are stored in the application's WebView2 local storage. The underlying data uses LevelDB files under the following directory and is not stored beside the executable:
+
+```text
+%LOCALAPPDATA%\io.github.shimez.chainosc\EBWebView\Default\Local Storage\leveldb\
+```
+
+Do not edit these files directly. Use the JSON export described below to back up settings or move them to another computer. The legacy .NET prototype's `%LOCALAPPDATA%\ChainOSC\settings.json` is not used by the current Tauri version.
+
 ### Settings backup and restore
 
 Export or import all ChainOSC for Windows settings as versioned JSON. The backup includes:

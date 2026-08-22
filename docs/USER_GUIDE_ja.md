@@ -66,6 +66,14 @@ UIを英語または日本語へ切り替えます。選択した言語は次回
 
 > **重要：** ChainOSC for Windowsをアップデートまたは削除する場合は、事前に「Windowsへのサインイン時に起動」のチェックを外し、「すべての設定を保存」を実行してください。チェックを残したまま旧exeを削除または移動すると、Windowsの自動起動設定に旧exeのパスが残ります。
 
+「すべての設定を保存」で保存した設定とUI言語は、現行Tauri版ではアプリケーションのWebView2ローカルストレージへ保存されます。実データは次のディレクトリ配下にあるLevelDB形式のファイルで、exeと同じフォルダーには保存されません。
+
+```text
+%LOCALAPPDATA%\io.github.shimez.chainosc\EBWebView\Default\Local Storage\leveldb\
+```
+
+このファイル群は直接編集せず、設定を別のPCへ移行したりバックアップしたりする場合は、次項のJSONエクスポートを使用してください。旧.NETプロトタイプ版の`%LOCALAPPDATA%\ChainOSC\settings.json`は、現行Tauri版では使用しません。
+
 ### 設定のバックアップと復元
 
 ChainOSC for Windows全体の設定を、バージョン情報付きJSONとしてエクスポート／インポートします。次の内容が対象です。

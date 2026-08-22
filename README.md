@@ -58,7 +58,7 @@ ChainOSC-compatible Key presets.
 - Test buttons and an activity log
 - The hotkey is not blocked from other applications
 - Duplicate hotkey validation
-- Automatic restoration from `%LOCALAPPDATA%\ChainOSC\settings.json`
+- Automatic restoration from the application's WebView2 local storage
 - Import and export compatible `ChainOSC-device-preset` Key JSON files
 - Automatic migration of v0.2.0 settings
 
