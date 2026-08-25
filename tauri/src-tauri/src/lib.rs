@@ -229,4 +229,24 @@ mod tests {
             vec![0x2f, 0x74, 0x65, 0x73, 0x74, 0, 0, 0, 0x2c, 0x69, 0, 0, 0, 0, 0, 1,]
         );
     }
+
+    #[test]
+    fn accepts_osc_int32_boundaries() {
+        assert!(build_osc_packet("/test", "int", "-2147483648").is_ok());
+        assert!(build_osc_packet("/test", "int", "2147483647").is_ok());
+    }
+
+    #[test]
+    fn rejects_values_outside_osc_int32() {
+        assert!(build_osc_packet("/test", "int", "-2147483649").is_err());
+        assert!(build_osc_packet("/test", "int", "2147483648").is_err());
+    }
+
+    #[test]
+    fn accepts_finite_float32_and_rejects_non_finite_values() {
+        assert!(build_osc_packet("/test", "float", "3.4028234e38").is_ok());
+        assert!(build_osc_packet("/test", "float", "3.5e38").is_err());
+        assert!(build_osc_packet("/test", "float", "NaN").is_err());
+        assert!(build_osc_packet("/test", "float", "Infinity").is_err());
+    }
 }

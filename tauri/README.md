@@ -1,6 +1,6 @@
 # ChainOSC for Windows — Tauri
 
-## v1.0.1
+## v1.0.2
 
 This stable release aligns the interface with the ChainOSC device projects:
 

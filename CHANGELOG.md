@@ -6,6 +6,15 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-08-26
+
+### Changed
+
+- Int値をOSC 1.0の`int32`範囲（`-2147483648`～`2147483647`）に限定
+- Float値を有限なOSC `float32`へ変換できる値に限定し、NaN、Infinity、float32オーバーフローを拒否
+- Web UI保存、全体設定インポート、デバイスプリセットインポートの数値検証を統一
+- アプリ、設定バックアップ、配布物のバージョン表記を`1.0.2`へ更新
+
 ## [1.0.1] - 2026-08-22
 
 ### Added
@@ -106,7 +115,8 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 - Int、Float、String形式のOSCメッセージに対応
 - 押した時／離した時のテスト送信と動作履歴を追加
 
-[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.0.2
 [1.0.1]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.0.1
 [1.0.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.0.0
 [0.7.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v0.7.0
