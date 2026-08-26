@@ -1,5 +1,9 @@
 # ChainOSC for Windows
 
+このプロジェクトのソフトウェア、Webサイト、ドキュメントは、OpenAI Codexとの協働により制作されています。
+
+This project's software, website, and documentation are created in collaboration with OpenAI Codex.
+
 ChainOSC for Windows sends OSC messages from configurable global hotkeys.
 
 ## Documentation
