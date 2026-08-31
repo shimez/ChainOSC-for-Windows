@@ -1,6 +1,6 @@
 # ChainOSC for Windows — Tauri
 
-## v1.0.2
+## v1.1.0
 
 This stable release aligns the interface with the ChainOSC device projects:
 
@@ -33,7 +33,7 @@ This stable release aligns the interface with the ChainOSC device projects:
 - English and Japanese UI with a persistent language selector;
 - Key actions consolidated into an ellipsis menu;
 - terminology aligned with M5ChainOSC and ChainOSCmini.
-- test buttons and an activity log.
+- test buttons, per-Key feedback, and a collapsible debug log.
 
 This directory contains the current supported implementation. Official
 ChainOSC for Windows releases are built from this Tauri project.

@@ -6,6 +6,14 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-08-31
+
+### Changed
+
+- Device Presetのインポート／エクスポート結果やテスト送信エラーを、対象Keyのカード内にも表示
+- 「動作履歴」を通常は折りたたまれた「デバッグログ」へ変更
+- Key Device Preset ImporterをError Registry v1の検証順序・Error Code・日英メッセージへ完全対応
+
 ## [1.0.2] - 2026-08-26
 
 ### Changed
@@ -115,7 +123,8 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 - Int、Float、String形式のOSCメッセージに対応
 - 押した時／離した時のテスト送信と動作履歴を追加
 
-[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.1.0
 [1.0.2]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.0.2
 [1.0.1]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.0.1
 [1.0.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.0.0

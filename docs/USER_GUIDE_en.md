@@ -145,11 +145,11 @@ Each hotkey press sends the next value in a sequence. After the End value is pas
 
 For example, Start `0`, End `2`, and Step `1` sends `0 → 1 → 2 → 0` on successive presses.
 
-## 8. Testing and activity log
+## 8. Testing and Debug Log
 
 Use Test Press and Test Release to send the current form values without operating the global hotkey.
 
-The activity log shows the Key, event, OSC Address, Type, Value, and any errors. Use it when diagnosing a receiver that does not react.
+Open the normally collapsed **Debug Log** to see the Key, event, OSC Address, Type, Value, and any errors. Use it when diagnosing a receiver that does not react. Device Preset import/export results and test-send errors also appear inside the affected Key card.
 
 ## 9. Key presets
 
@@ -186,6 +186,8 @@ To use a shared preset:
 7. Select Save All Settings.
 
 ChainOSC for Windows supports both the current `ChainOSC-device-preset` format and legacy `M5ChainOSC-device-preset` Key files. Presets exported from the Windows application can also be imported into M5ChainOSC and ChainOSCmini.
+
+Imports are validated according to ChainOSC Device Preset Import Error Registry v1. An invalid file is rejected without changing the Key settings, and its Error Code, correction guidance, and error context appear in the affected Key card and Debug Log.
 
 ## 10. Deleting a Key
 

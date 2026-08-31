@@ -10,7 +10,7 @@
   <body>
     <main>
       <h1>ChainOSC for Windows</h1>
-      <p class="version">v1.0.2</p>
+      <p class="version">v1.1.0</p>
 
       <section class="card language-row">
         <h2 data-en="Language" data-ja="言語">Language</h2>
@@ -19,7 +19,7 @@
 
       <section class="card system-card">
         <h2 data-en="System" data-ja="システム">System</h2>
-        <div class="system-grid"><div><strong data-en="Product" data-ja="製品名">Product</strong><span>ChainOSC for Windows</span></div><div><strong>Version</strong><span>1.0.2</span></div><div><strong>Runtime</strong><span>Tauri / WebView2</span></div></div>
+        <div class="system-grid"><div><strong data-en="Product" data-ja="製品名">Product</strong><span>ChainOSC for Windows</span></div><div><strong>Version</strong><span>1.1.0</span></div><div><strong>Runtime</strong><span>Tauri / WebView2</span></div></div>
       </section>
 
       <section class="card">
@@ -47,11 +47,14 @@
 
       <div class="save-bar"><span id="unsaved" class="unsaved" hidden data-en="Unsaved changes" data-ja="未保存の変更">Unsaved changes</span><button id="save" class="primary" type="button" data-en="Save All Settings" data-ja="すべての設定を保存">Save All Settings</button></div>
 
-      <section class="card">
-        <h2 data-en="Activity" data-ja="動作履歴">Activity</h2>
+      <section class="card status-card">
         <div id="status" class="status">Loading settings...</div>
-        <div id="log" aria-live="polite"></div>
       </section>
+
+      <details class="card debug-log-card">
+        <summary data-en="Debug Log" data-ja="デバッグログ">Debug Log</summary>
+        <div id="log" aria-live="polite"></div>
+      </details>
     </main>
   </body>
 </html>

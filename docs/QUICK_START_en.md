@@ -65,7 +65,7 @@ Example VRChat jump configuration:
 ## 5. Test and save
 
 1. Use Test Press and Test Release to check the current settings.
-2. Verify the OSC Address, Type, and Value in the activity log.
+2. Open the **Debug Log** at the bottom of the window and verify the OSC Address, Type, and Value.
 3. Select Save All Settings.
 4. Press the global hotkey and confirm the result in VRChat.
 

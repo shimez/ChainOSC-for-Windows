@@ -26,7 +26,7 @@ ChainOSC for Windows sends OSC messages from configurable global hotkeys.
 The .NET prototype is no longer the primary implementation. New development,
 support, and releases are based on the Tauri implementation.
 
-## v1.0.2
+## v1.1.0
 
 This stable release provides English and Japanese UI, Key action menus, recordable
 global hotkeys, Windows startup, system tray operation, and
@@ -59,7 +59,7 @@ ChainOSC-compatible Key presets.
 - Add, delete, reorder, or leave either event with zero messages
 - OSC `Int`, `Float`, and `String` values
 - Configurable destination host, UDP port, and OSC Address
-- Test buttons and an activity log
+- Test buttons, per-Key feedback, and a collapsible debug log
 - The hotkey is not blocked from other applications
 - Duplicate hotkey validation
 - Automatic restoration from the application's WebView2 local storage
