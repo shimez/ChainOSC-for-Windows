@@ -6,6 +6,17 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-09-04
+
+### Added
+
+- OSC Address、OSC Value、OSC int32／float32、Sequence Stepの入力中検証を追加
+- 不正な入力欄を赤く表示し、欄の直下に日英の警告メッセージを表示
+
+### Changed
+
+- 不正なOSC設定が残っている場合は保存を中止し、最初の不正入力欄へ移動するように変更
+
 ## [1.1.0] - 2026-08-31
 
 ### Changed
@@ -123,7 +134,8 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 - Int、Float、String形式のOSCメッセージに対応
 - 押した時／離した時のテスト送信と動作履歴を追加
 
-[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.1.1...HEAD
+[1.1.1]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.1.1
 [1.1.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.1.0
 [1.0.2]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.0.2
 [1.0.1]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.0.1

@@ -26,7 +26,7 @@ ChainOSC for Windows sends OSC messages from configurable global hotkeys.
 The .NET prototype is no longer the primary implementation. New development,
 support, and releases are based on the Tauri implementation.
 
-## v1.1.0
+## v1.1.1
 
 This stable release provides English and Japanese UI, Key action menus, recordable
 global hotkeys, Windows startup, system tray operation, and

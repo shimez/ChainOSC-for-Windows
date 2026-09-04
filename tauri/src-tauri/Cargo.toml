@@ -1,6 +1,6 @@
 [package]
 name = "chainosc-for-windows"
-version = "1.1.0"
+version = "1.1.1"
 description = "Lightweight OSC sender controlled by global hotkeys"
 authors = ["shimez"]
 license = "MIT"
