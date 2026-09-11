@@ -52,21 +52,16 @@ To send to another computer or device, enter the receiver's IP address and UDP p
 1. Enter a descriptive name under Device Name.
 2. Select the Global Hotkey field.
 3. Press the key or key combination you want to use. `Ctrl`, `Alt`, `Shift`, and the Windows key can be included.
-4. Configure the OSC Address, Type, and Value under Press.
-
-VRChat Voice example:
-
-- OSC Address: `/input/Voice`
-- Type: `Int`
-- Press value: `1`
-
-5. Switch to Release and configure its OSC Address, Type, and Value.
-
-VRChat Voice example:
-
-- OSC Address: `/input/Voice`
-- Type: `Int`
-- Release value: `0`
+4. Configure the OSC Address, Type, and Value under Press.  
+   VRChat Voice example:
+   - OSC Address: `/input/Voice`
+   - Type: `Int`
+   - Press value: `1`
+5. Switch to Release and configure its OSC Address, Type, and Value.  
+   VRChat Voice example:
+   - OSC Address: `/input/Voice`
+   - Type: `Int`
+   - Release value: `0`
 
 ## 5. Test and save
 
