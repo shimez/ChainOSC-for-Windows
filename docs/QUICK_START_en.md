@@ -71,7 +71,7 @@ Example VRChat jump configuration:
 
 ## 6. Use a shared preset
 
-Key presets published under [M5ChainOSC Key Presets](https://github.com/shimez/M5ChainOSC/tree/main/presets/key) are compatible with ChainOSC for Windows.
+Key presets published under [ChainOSC Key Presets](https://github.com/shimez/ChainOSC/tree/main/presets/key) are compatible with ChainOSC for Windows.
 
 1. Download the desired JSON file.
 2. Open `…` in the target Key card.

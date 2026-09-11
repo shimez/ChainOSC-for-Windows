@@ -173,7 +173,7 @@ This allows the same preset to be applied safely to another Key. After importing
 
 Key presets published for M5ChainOSC can also be used with ChainOSC for Windows.
 
-- [M5ChainOSC Key Presets](https://github.com/shimez/M5ChainOSC/tree/main/presets/key)
+- [ChainOSC Key Presets](https://github.com/shimez/ChainOSC/tree/main/presets/key)
 
 To use a shared preset:
 

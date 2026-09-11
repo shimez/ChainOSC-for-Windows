@@ -170,7 +170,7 @@ ChainOSC for Windows全体の設定を、バージョン情報付きJSONとし�
 
 M5ChainOSCで公開されているKeyプリセットをChainOSC for Windowsでも利用できます。
 
-- [M5ChainOSC Key Presets](https://github.com/shimez/M5ChainOSC/tree/main/presets/key)
+- [ChainOSC Key Presets](https://github.com/shimez/ChainOSC/tree/main/presets/key)
 
 利用方法：
 

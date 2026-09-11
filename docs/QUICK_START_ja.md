@@ -71,7 +71,7 @@ VRChatのリングメニューから次の順に開き、OSCを有効にしま�
 
 ## 6. 公開プリセットを使う
 
-[M5ChainOSC Key Presets](https://github.com/shimez/M5ChainOSC/tree/main/presets/key)で公開されているKeyプリセットを利用できます。
+[ChainOSC Key Presets](https://github.com/shimez/ChainOSC/tree/main/presets/key)で公開されているKeyプリセットを利用できます。
 
 1. 使用するJSONファイルをダウンロードします。
 2. Keyカード右上の`…`を開きます。
