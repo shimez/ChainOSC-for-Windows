@@ -168,7 +168,7 @@ ChainOSC for Windows全体の設定を、バージョン情報付きJSONとし�
 
 ### 共有プリセットの入手先
 
-M5ChainOSCで公開されているKeyプリセットをChainOSC for Windowsでも利用できます。
+ChainOSCシリーズ向けに公開されているKeyプリセットをChainOSC for Windowsでも利用できます。
 
 - [ChainOSC Key Presets](https://github.com/shimez/ChainOSC/tree/main/presets/key)
 
@@ -182,7 +182,7 @@ M5ChainOSCで公開されているKeyプリセットをChainOSC for Windowsで�
 6. 必要に応じてデバイス名とグローバルホットキーを設定します。
 7. 「すべての設定を保存」を押します。
 
-`ChainOSC-device-preset`形式に加え、旧`M5ChainOSC-device-preset`形式のKeyプリセットも読み込めます。Windows版からエクスポートしたプリセットは、M5ChainOSCおよびChainOSCminiでも利用できます。
+`ChainOSC-device-preset`形式に加え、旧`M5ChainOSC-device-preset`形式のKeyプリセットも読み込めます。Keyのcanonical formatはDevice Preset v1です。Windows版からエクスポートしたKey v1プリセットは、M5ChainOSC、ChainOSCmini、ChainOSCnano、ChainOSCPad、ChainOSC for Windowsで共有できます。
 
 インポート時はChainOSC Device Preset Import Error Registry v1に従って検証します。不正なファイルは設定を変更せずに拒否され、対象KeyカードとデバッグログにError Code、修正条件、エラー箇所が表示されます。
 

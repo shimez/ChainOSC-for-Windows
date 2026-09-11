@@ -47,19 +47,25 @@ Use these values when VRChat is running on the same computer:
 
 To send to another computer or device, enter the receiver's IP address and UDP port.
 
-## 4. Configure a Key and hotkey
+## 4. Configure one Key and its hotkey
 
 1. Enter a descriptive name under Device Name.
 2. Select the Global Hotkey field.
 3. Press the key or key combination you want to use. `Ctrl`, `Alt`, `Shift`, and the Windows key can be included.
 4. Configure the OSC Address, Type, and Value under Press.
-5. Configure Release if needed.
 
-Example VRChat jump configuration:
+VRChat Voice example:
 
-- OSC Address: `/input/Jump`
+- OSC Address: `/input/Voice`
 - Type: `Int`
 - Press value: `1`
+
+5. Switch to Release and configure its OSC Address, Type, and Value.
+
+VRChat Voice example:
+
+- OSC Address: `/input/Voice`
+- Type: `Int`
 - Release value: `0`
 
 ## 5. Test and save
@@ -67,20 +73,10 @@ Example VRChat jump configuration:
 1. Use Test Press and Test Release to check the current settings.
 2. Open the **Debug Log** at the bottom of the window and verify the OSC Address, Type, and Value.
 3. Select Save All Settings.
-4. Press the global hotkey and confirm the result in VRChat.
+4. Press the configured global hotkey and confirm that VRChat Voice becomes active.
+5. Release the global hotkey and confirm that the Voice input state returns.
 
-## 6. Use a shared preset
-
-Key presets published under [ChainOSC Key Presets](https://github.com/shimez/ChainOSC/tree/main/presets/key) are compatible with ChainOSC for Windows.
-
-1. Download the desired JSON file.
-2. Open `…` in the target Key card.
-3. Select Import Preset (JSON).
-4. Choose the downloaded file.
-5. Review the OSC settings, then assign a Device Name and Global Hotkey.
-6. Select Save All Settings.
-
-## 7. Use the system tray
+## 6. Use the system tray
 
 Closing or minimizing the window keeps ChainOSC for Windows running in the system tray. Global hotkeys and OSC transmission continue while the settings window is hidden.
 
@@ -88,4 +84,4 @@ Closing or minimizing the window keeps ChainOSC for Windows running in the syste
 - `Show ChainOSC`: show the settings window
 - `Exit`: completely exit the application
 
-Basic setup is now complete. See the [English User Guide](../user-guide/) for multiple messages, Sequence mode, full backup, startup with Windows, and other features.
+Basic setup is now complete. See the [English User Guide](../user-guide/) for multiple OSC messages, Sequence mode, Device Presets, full backup, startup with Windows, and other features. Use Device Presets to reuse and share settings across ChainOSC products.

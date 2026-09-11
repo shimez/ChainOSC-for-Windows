@@ -171,7 +171,7 @@ This allows the same preset to be applied safely to another Key. After importing
 
 ### Shared preset source
 
-Key presets published for M5ChainOSC can also be used with ChainOSC for Windows.
+Key presets published for the ChainOSC series can also be used with ChainOSC for Windows.
 
 - [ChainOSC Key Presets](https://github.com/shimez/ChainOSC/tree/main/presets/key)
 
@@ -185,7 +185,7 @@ To use a shared preset:
 6. Assign a Device Name and Global Hotkey as needed.
 7. Select Save All Settings.
 
-ChainOSC for Windows supports both the current `ChainOSC-device-preset` format and legacy `M5ChainOSC-device-preset` Key files. Presets exported from the Windows application can also be imported into M5ChainOSC and ChainOSCmini.
+ChainOSC for Windows supports both the current `ChainOSC-device-preset` format and legacy `M5ChainOSC-device-preset` Key files. The canonical format for Key is Device Preset v1. Key v1 presets exported from the Windows application can be shared with M5ChainOSC, ChainOSCmini, ChainOSCnano, ChainOSCPad, and ChainOSC for Windows.
 
 Imports are validated according to ChainOSC Device Preset Import Error Registry v1. An invalid file is rejected without changing the Key settings, and its Error Code, correction guidance, and error context appear in the affected Key card and Debug Log.
 
