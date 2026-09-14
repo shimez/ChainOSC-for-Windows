@@ -140,7 +140,8 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 - Int、Float、String形式のOSCメッセージに対応
 - 押した時／離した時のテスト送信と動作履歴を追加
 
-[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.1.1...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.1.2...HEAD
+[1.1.2]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.1.1
 [1.1.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.1.0
 [1.0.2]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.0.2
