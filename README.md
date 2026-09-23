@@ -54,7 +54,7 @@ ChainOSC-compatible Key presets.
 
 - Add and delete any number of Key configurations
 - Common Windows keys and modifier combinations
-- Press / Release or Sequence mode
+- Press / Release or Sequence mode (Loop / Ping-Pong)
 - Up to 8 Press + Release OSC messages per Key
 - Add, delete, reorder, or leave either event with zero messages
 - OSC `Int`, `Float`, and `String` values

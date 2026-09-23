@@ -6,6 +6,10 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 
 ## [Unreleased]
 
+### Added
+
+- Key SequenceにLoop／Ping-Pongを選べる進行設定を追加し、Device Preset v3のインポート／エクスポートに対応（従来のv1はLoopとして読み込み）
+
 ## [1.1.2] - 2026-09-13
 
 ### Changed

@@ -130,7 +130,7 @@ ChainOSC for Windows全体の設定を、バージョン情報付きJSONとし�
 
 ## 7. シーケンス（押した時のみ）モード
 
-ホットキーを押すたびに、開始値から増減量ずつ値を進めて送信します。終了値を超えると開始値へ戻ります。ホットキーを離した時には送信しません。
+ホットキーを押すたびに、開始値から増減量ずつ値を進めて送信します。ループでは終了値を超えると開始値へ戻り、ピンポンでは両端で折り返します。ホットキーを離した時には送信しません。
 
 | 設定項目 | 説明 |
 | --- | --- |
@@ -139,8 +139,9 @@ ChainOSC for Windows全体の設定を、バージョン情報付きJSONとし�
 | 終了値 | シーケンスの終端です。 |
 | 増減量 | 押すたびに加算する値です。負の値を指定すると減少します。`0`は指定できません。 |
 | 型 | `Float`または`Int`など、送信する値の型です。`Int`では小数部分が切り捨てられます。 |
+| 進行モード | `↻ ループ`（従来の進行）または`↔ 往復`（両端で折り返し）を選択します。選択に応じて説明文が切り替わります。 |
 
-例として、開始値`0`、終了値`2`、増減量`1`の場合、押すたびに`0 → 1 → 2 → 0`の順で送信します。
+開始値`0`、終了値`2`、増減量`1`の場合、ループは`0 → 1 → 2 → 0`、ピンポンは`0 → 1 → 2 → 1 → 0`の順で送信します。ピンポンでは端点を一度だけ送信し、Stepが範囲を超える場合も端点で折り返します。現在値と折返し方向は保存せず、アプリ再起動・設定保存・Preset importでは開始値／進行方向へ戻ります。
 
 ## 8. テストとデバッグログ
 
@@ -182,7 +183,7 @@ ChainOSCシリーズ向けに公開されているKeyプリセットをChainOSC 
 6. 必要に応じてデバイス名とグローバルホットキーを設定します。
 7. 「すべての設定を保存」を押します。
 
-`ChainOSC-device-preset`形式に加え、旧`M5ChainOSC-device-preset`形式のKeyプリセットも読み込めます。Keyのcanonical formatはDevice Preset v1です。Windows版からエクスポートしたKey v1プリセットは、M5ChainOSC、ChainOSCmini、ChainOSCnano、ChainOSCPad、ChainOSC for Windowsで共有できます。
+`ChainOSC-device-preset`形式のKey v1／v3に加え、旧`M5ChainOSC-device-preset`形式のKey v1も読み込めます。旧v1で`progressionMode`がない場合はループになります。Windows版からの新規エクスポートはDevice Preset v3で、モードにかかわらず`progressionMode`（0=ループ、1=ピンポン）を含みます。Key v3は対応するM5ChainOSC、ChainOSCmini、ChainOSCnano、ChainOSCPad、ChainOSC for Windowsで共有できます。旧版の製品にはv1を使用してください。
 
 インポート時はChainOSC Device Preset Import Error Registry v1に従って検証します。不正なファイルは設定を変更せずに拒否され、対象KeyカードとデバッグログにError Code、修正条件、エラー箇所が表示されます。
 

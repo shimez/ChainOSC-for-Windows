@@ -74,6 +74,9 @@ button { cursor: pointer; font-weight: 650; }
 .note { margin: 0 0 14px; color: #667085; }
 .sequence-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
 .sequence-address { grid-column: 1 / -1; }
+.sequence-progression { margin-top: 14px; }
+.progression-description { margin: 8px 0 0; color: #667085; }
+.progression-description[hidden] { display: none; }
 .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 18px; }
 .save-bar {
   position: sticky; bottom: 12px; z-index: 2;

@@ -133,7 +133,7 @@ The add button is disabled when the combined total reaches eight.
 
 ## 7. Sequence (press only) mode
 
-Each hotkey press sends the next value in a sequence. After the End value is passed, the sequence returns to Start. Releasing the hotkey sends nothing.
+Each hotkey press sends the next value in a sequence. Loop returns to Start after passing End; Ping-Pong reverses at each endpoint. Releasing the hotkey sends nothing.
 
 | Setting | Description |
 | --- | --- |
@@ -142,8 +142,9 @@ Each hotkey press sends the next value in a sequence. After the End value is pas
 | End | The final value in the sequence. |
 | Step | The amount added after each press. Use a negative number for a descending sequence. `0` is not allowed. |
 | Type | The output type, such as `Float` or `Int`. Decimal portions are discarded for `Int`. |
+| Progression Mode | Choose `↻ Loop` (previous behavior) or `↔ Ping-Pong` (reverse at each endpoint). The description changes with your selection. |
 
-For example, Start `0`, End `2`, and Step `1` sends `0 → 1 → 2 → 0` on successive presses.
+For Start `0`, End `2`, and Step `1`, Loop sends `0 → 1 → 2 → 0`, while Ping-Pong sends `0 → 1 → 2 → 1 → 0`. Ping-Pong sends each endpoint once and clamps steps that overshoot it. Current value and direction are not saved; app restart, saving settings, and importing a preset restart at Start in the forward direction.
 
 ## 8. Testing and Debug Log
 
@@ -185,7 +186,7 @@ To use a shared preset:
 6. Assign a Device Name and Global Hotkey as needed.
 7. Select Save All Settings.
 
-ChainOSC for Windows supports both the current `ChainOSC-device-preset` format and legacy `M5ChainOSC-device-preset` Key files. The canonical format for Key is Device Preset v1. Key v1 presets exported from the Windows application can be shared with M5ChainOSC, ChainOSCmini, ChainOSCnano, ChainOSCPad, and ChainOSC for Windows.
+ChainOSC for Windows imports `ChainOSC-device-preset` Key v1 and v3 files, as well as legacy `M5ChainOSC-device-preset` Key v1 files. Missing `progressionMode` in old v1 files defaults to Loop. New Windows exports are Device Preset v3 and always include `progressionMode` (0=Loop, 1=Ping-Pong), even when Sequence is not active. Key v3 presets can be shared with compatible M5ChainOSC, ChainOSCmini, ChainOSCnano, ChainOSCPad, and ChainOSC for Windows versions; use v1 for older products.
 
 Imports are validated according to ChainOSC Device Preset Import Error Registry v1. An invalid file is rejected without changing the Key settings, and its Error Code, correction guidance, and error context appear in the affected Key card and Debug Log.
 

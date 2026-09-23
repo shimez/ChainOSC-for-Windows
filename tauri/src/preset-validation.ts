@@ -8,7 +8,7 @@ export type DevicePreset = {
     mode: number;
     press: PresetMessage[];
     release: PresetMessage[];
-    sequence: { address: string; type: number; start: number; end: number; step: number };
+    sequence: { address: string; type: number; start: number; end: number; step: number; progressionMode: 0 | 1 };
   };
 };
 
@@ -210,12 +210,15 @@ function validateSequence(value: unknown, legacy: boolean): DevicePreset["key"][
   const step = value.step as number;
   if (step === 0) fail("E_SEQUENCE_STEP_ZERO", { ...base, field: "step" });
   if ((start < end && step < 0) || (start > end && step > 0)) fail("E_SEQUENCE_DIRECTION_INVALID", { ...base, field: "step" });
-  return { address: value.address, type, start, end, step };
+  const progressionMode = has(value, "progressionMode") ? value.progressionMode : 0;
+  if (typeof progressionMode !== "number" || !Number.isInteger(progressionMode) || ![0, 1].includes(progressionMode))
+    fail("E_PRESET_DEVICE_SETTING_INVALID", { ...base, field: "progressionMode", limit: "0 or 1" });
+  return { address: value.address, type, start, end, step, progressionMode: progressionMode as 0 | 1 };
 }
 
 export function validateKeyPreset(value: unknown): DevicePreset {
   if (!isObject(value) || !has(value, "format") || typeof value.format !== "string" || !["ChainOSC-device-preset", "M5ChainOSC-device-preset"].includes(value.format)) fail("E_PRESET_FORMAT_INVALID", { field: "format" });
-  if (!has(value, "schemaVersion") || typeof value.schemaVersion !== "number" || !Number.isInteger(value.schemaVersion) || value.schemaVersion !== 1) fail("E_PRESET_SCHEMA_UNSUPPORTED", { field: "schemaVersion" });
+  if (!has(value, "schemaVersion") || typeof value.schemaVersion !== "number" || !Number.isInteger(value.schemaVersion) || ![1, 3].includes(value.schemaVersion) || (value.format === "M5ChainOSC-device-preset" && value.schemaVersion !== 1)) fail("E_PRESET_SCHEMA_UNSUPPORTED", { field: "schemaVersion" });
   if (!has(value, "deviceType") || typeof value.deviceType !== "number" || !Number.isInteger(value.deviceType) || !supportedDeviceTypes.has(value.deviceType)) fail("E_PRESET_DEVICE_TYPE_UNSUPPORTED", { field: "deviceType", actualDeviceType: String(value.deviceType ?? "missing") });
   if (value.deviceType !== 3) fail("E_PRESET_DEVICE_TYPE_MISMATCH", { expectedDeviceType: "Key", actualDeviceType: String(value.deviceType) });
   const deviceTypeName = requireField(value, "deviceTypeName", { deviceType: "Key" });
@@ -235,7 +238,7 @@ export function validateKeyPreset(value: unknown): DevicePreset {
   const release = releaseValue.map((message, index) => validateMessage(message, "release", index + 1));
   const sequence = validateSequence(sequenceValue, value.format === "M5ChainOSC-device-preset");
   if (![0, 1].includes(mode)) fail("E_PRESET_DEVICE_SETTING_INVALID", { deviceType: "Key", field: "mode", limit: "0 or 1" });
-  return { format: value.format, schemaVersion: 1, deviceType: 3, deviceTypeName, key: { mode, press, release, sequence } };
+  return { format: value.format, schemaVersion: value.schemaVersion, deviceType: 3, deviceTypeName, key: { mode, press, release, sequence } };
 }
 
 export function parseKeyPreset(text: string, fileBytes: number): DevicePreset {
