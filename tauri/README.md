@@ -1,8 +1,9 @@
 # ChainOSC for Windows — Tauri
 
-## v1.1.0
+## v1.1.3
 
-This stable release aligns the interface with the ChainOSC device projects:
+This release adds Key Sequence Loop / Ping-Pong and Device Preset v3 support,
+while retaining the existing features aligned with the ChainOSC device projects:
 
 - add and delete any number of Keys;
 - a name and independent global hotkey for every Key;

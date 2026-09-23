@@ -26,11 +26,12 @@ ChainOSC for Windows sends OSC messages from configurable global hotkeys.
 The .NET prototype is no longer the primary implementation. New development,
 support, and releases are based on the Tauri implementation.
 
-## v1.1.2
+## v1.1.3
 
-This stable release provides English and Japanese UI, Key action menus, recordable
-global hotkeys, Windows startup, system tray operation, and
-ChainOSC-compatible Key presets.
+This release adds Loop / Ping-Pong progression for Key Sequences and Device
+Preset v3 import/export, while retaining v1 preset compatibility. It also
+provides English and Japanese UI, recordable global hotkeys, Windows startup,
+and system tray operation.
 
 - Record a hotkey by pressing the desired key combination
 - Supports `Ctrl`, `Alt`, `Shift`, and Windows-key modifiers

@@ -6,9 +6,16 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-09-23
+
 ### Added
 
-- Key SequenceにLoop／Ping-Pongを選べる進行設定を追加し、Device Preset v3のインポート／エクスポートに対応（従来のv1はLoopとして読み込み）
+- Key SequenceにLoop／Ping-Pongを選べる進行モードを追加。端点で折り返し、往復時は端点を重複送信しない
+- Key Device Preset v3のインポート／エクスポートに対応。従来のv1はLoopとして読み込み、旧形式の互換性を維持
+
+### Changed
+
+- 設定画面にシリーズ共通の進行モード選択肢と、選択に応じた日英の動作説明を表示
 
 ## [1.1.2] - 2026-09-13
 
@@ -144,7 +151,8 @@ ChainOSC for Windowsの主な変更履歴を記録します。
 - Int、Float、String形式のOSCメッセージに対応
 - 押した時／離した時のテスト送信と動作履歴を追加
 
-[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.1.2...HEAD
+[Unreleased]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.1.3...HEAD
+[1.1.3]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.1.2...v1.1.3
 [1.1.2]: https://github.com/shimez/ChainOSC-for-Windows/compare/v1.1.1...v1.1.2
 [1.1.1]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.1.1
 [1.1.0]: https://github.com/shimez/ChainOSC-for-Windows/releases/tag/v1.1.0
